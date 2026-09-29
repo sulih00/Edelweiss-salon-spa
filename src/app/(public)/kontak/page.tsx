@@ -10,6 +10,8 @@ export const metadata: Metadata = {
   description: "Hubungi Edelweiss Salon Spa via WhatsApp, kunjungi outlet kami, atau lihat jam operasional. Buka setiap hari 09.00–20.00.",
 };
 
+export const dynamic = "force-dynamic";
+
 export default async function Kontak() {
   const lokasi =
     (await prisma.lokasi.findFirst({ where: { utama: true } })) ??

@@ -8,6 +8,8 @@ export const metadata: Metadata = {
   description: "Lihat suasana outlet Edelweiss Salon Spa: ruang spa yang tenang, hair studio, dan nail corner.",
 };
 
+export const dynamic = "force-dynamic";
+
 export default async function Galeri() {
   const data = await prisma.galeri.findMany({ where: { tampil: true } });
   return (

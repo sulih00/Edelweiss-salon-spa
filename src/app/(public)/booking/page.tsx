@@ -8,6 +8,8 @@ export const metadata: Metadata = {
   description: "Booking treatment Edelweiss Salon Spa dalam 3 langkah: pilih layanan, isi data, tentukan jadwal. Konfirmasi otomatis via WhatsApp.",
 };
 
+export const dynamic = "force-dynamic";
+
 export default async function BookingPage({ searchParams }: { searchParams: Promise<{ layanan?: string }> }) {
   const sp = await searchParams;
   const [layanan, rekening, karyawan] = await Promise.all([

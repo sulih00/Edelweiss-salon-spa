@@ -8,6 +8,8 @@ export const metadata: Metadata = {
   description: "Daftar layanan Edelweiss Salon Spa beserta harga transparan: haircut, creambath, massage, facial, manicure pedicure, paket bride.",
 };
 
+export const dynamic = "force-dynamic";
+
 export default async function Layanan() {
   const data = await prisma.produk.findMany({
     where: { aktif: true },

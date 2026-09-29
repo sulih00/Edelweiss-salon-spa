@@ -10,6 +10,8 @@ export const metadata: Metadata = {
   description: "Promo Edelweiss Salon Spa: diskon treatment, potongan paket bride. Catat kodenya dan pakai saat booking online.",
 };
 
+export const dynamic = "force-dynamic";
+
 export default async function PromoPage() {
   const now = new Date();
   const all = await prisma.promo.findMany({

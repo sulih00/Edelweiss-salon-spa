@@ -8,6 +8,8 @@ export const metadata: Metadata = {
   description: "Cerita Edelweiss Salon Spa: terapis bersertifikat, produk aman BPOM, dan ruangan tenang untuk merawat diri.",
 };
 
+export const dynamic = "force-dynamic";
+
 const values = [
   { icon: Leaf, t: "Bahan alami & aman", d: "Produk BPOM, essential oil murni, dan alat steril setiap pemakaian." },
   { icon: HeartHandshake, t: "Pelayanan tulus", d: "Konsultasi jujur — kami sarankan yang kamu butuhkan, bukan yang termahal." },

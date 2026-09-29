@@ -6,6 +6,8 @@ import { Reveal, SectionHeading } from "@/components/motion";
 import { TestimonialCarousel, Faq } from "@/components/home-client";
 import { Sparkles, Scissors, Flower2, Star, ArrowRight, BadgeCheck, Leaf, Clock, TicketPercent } from "lucide-react";
 
+export const dynamic = "force-dynamic";
+
 export default async function Home() {
   const dbKategori = await prisma.kategoriProduk.findMany({ select: { nama: true } });
   const marqueeItems = dbKategori.length > 0

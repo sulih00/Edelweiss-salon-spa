@@ -8,6 +8,8 @@ export const metadata: Metadata = {
   description: "Ulasan asli pelanggan Edelweiss Salon Spa dengan rating 4.9 dari 800+ treatment.",
 };
 
+export const dynamic = "force-dynamic";
+
 export default async function Testimoni() {
   const data = await prisma.testimoni.findMany({ where: { tampil: true } });
   return (
