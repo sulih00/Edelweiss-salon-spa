@@ -16,6 +16,7 @@ const allMenu: (AdminMenu & { roles: string[] })[] = [
   { href: "/cms/testimoni", label: "Testimoni", icon: "testimoni", roles: ["OWNER", "ADMIN"] },
   { href: "/cms/pelanggan", label: "Pelanggan", icon: "pelanggan", roles: ["OWNER", "ADMIN", "KASIR"] },
   { href: "/cms/karyawan", label: "Karyawan", icon: "karyawan", roles: ["OWNER", "ADMIN"] },
+  { href: "/cms/lokasi", label: "Maps & Lokasi", icon: "lokasi", roles: ["OWNER", "ADMIN"] },
   { href: "/cms/users", label: "Users", icon: "users", roles: ["OWNER"] },
 ];
 
