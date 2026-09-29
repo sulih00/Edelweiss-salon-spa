@@ -71,7 +71,9 @@ export default function BookingForm({
   useEffect(() => {
     if (!selectedDate) return;
     let mounted = true;
-    setLoadingSlots(true);
+    Promise.resolve().then(() => {
+      if (mounted) setLoadingSlots(true);
+    });
     fetch(`/api/booking/slots?tanggal=${selectedDate}&karyawanId=${selectedKaryawan}&produkId=${form.produkId}`)
       .then((r) => r.json())
       .then((d) => {

@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useCallback } from "react";
 import {
   MapPin,
   Plus,
@@ -45,8 +45,7 @@ export default function LokasiClient() {
   const [utama, setUtama] = useState(true);
   const [geoLoading, setGeoLoading] = useState(false);
 
-  async function loadData() {
-    setLoading(true);
+  const fetchLokasi = useCallback(async () => {
     setErrMessage("");
     try {
       const res = await fetch("/api/cms/lokasi");
@@ -58,11 +57,18 @@ export default function LokasiClient() {
     } finally {
       setLoading(false);
     }
-  }
+  }, []);
 
   useEffect(() => {
-    loadData();
-  }, []);
+    Promise.resolve().then(() => {
+      fetchLokasi();
+    });
+  }, [fetchLokasi]);
+
+  const loadData = useCallback(() => {
+    setLoading(true);
+    fetchLokasi();
+  }, [fetchLokasi]);
 
   function openCreateModal() {
     setEditItem(null);

@@ -59,8 +59,10 @@ export default function KaryawanClient() {
   }, []);
 
   useEffect(() => {
-    loadData();
-    loadKomisi(bulan);
+    Promise.resolve().then(() => {
+      loadData();
+      loadKomisi(bulan);
+    });
   }, [loadData, loadKomisi, bulan]);
 
   async function submit(e: React.FormEvent) {

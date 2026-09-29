@@ -1,12 +1,10 @@
 "use client";
-
-import { useState } from "react";
 import {
   ResponsiveContainer, AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip,
   PieChart, Pie, Cell, BarChart, Bar, Legend,
 } from "recharts";
 import { rupiah } from "@/lib/utils";
-import { TrendingUp, PieChart as PieIcon, BarChart3, Wallet, Award, Sparkles } from "lucide-react";
+import { TrendingUp, PieChart as PieIcon, BarChart3, Award } from "lucide-react";
 
 const STATUS_COLORS: Record<string, string> = {
   BARU: "#d97706",        // Amber
@@ -35,34 +33,32 @@ interface DashboardChartsProps {
   paymentData?: PaymentRow[];
 }
 
-export default function DashboardCharts({ daily, byStatus, top, paymentData = [] }: DashboardChartsProps) {
-  const [range, setRange] = useState<"14" | "30">("14");
-
-  // Format custom tooltip for Area Chart
-  const CustomAreaTooltip = ({ active, payload, label }: any) => {
-    if (active && payload && payload.length) {
-      return (
-        <div className="rounded-2xl border border-stone-200/80 bg-white/95 p-3.5 shadow-xl text-xs space-y-1.5 backdrop-blur-md">
-          <p className="font-bold text-stone-900 border-b border-stone-100 pb-1">{label}</p>
-          <div className="flex items-center justify-between gap-4 text-emerald-700 font-semibold">
-            <span className="flex items-center gap-1">
-              <span className="h-2 w-2 rounded-full bg-emerald-500" /> Kas Masuk:
-            </span>
-            <span>{rupiah(payload[0]?.value || 0)}</span>
-          </div>
-          {payload[1] && (
-            <div className="flex items-center justify-between gap-4 text-rose-600 font-semibold">
-              <span className="flex items-center gap-1">
-                <span className="h-2 w-2 rounded-full bg-rose-500" /> Kas Keluar:
-              </span>
-              <span>{rupiah(payload[1]?.value || 0)}</span>
-            </div>
-          )}
+function CustomAreaTooltip({ active, payload, label }: { active?: boolean; payload?: Array<{ value?: number }>; label?: string }) {
+  if (active && payload && payload.length) {
+    return (
+      <div className="rounded-2xl border border-stone-200/80 bg-white/95 p-3.5 shadow-xl text-xs space-y-1.5 backdrop-blur-md">
+        <p className="font-bold text-stone-900 border-b border-stone-100 pb-1">{label}</p>
+        <div className="flex items-center justify-between gap-4 text-emerald-700 font-semibold">
+          <span className="flex items-center gap-1">
+            <span className="h-2 w-2 rounded-full bg-emerald-500" /> Kas Masuk:
+          </span>
+          <span>{rupiah(Number(payload[0]?.value || 0))}</span>
         </div>
-      );
-    }
-    return null;
-  };
+        {payload[1] && (
+          <div className="flex items-center justify-between gap-4 text-rose-600 font-semibold">
+            <span className="flex items-center gap-1">
+              <span className="h-2 w-2 rounded-full bg-rose-500" /> Kas Keluar:
+            </span>
+            <span>{rupiah(Number(payload[1]?.value || 0))}</span>
+          </div>
+        )}
+      </div>
+    );
+  }
+  return null;
+}
+
+export default function DashboardCharts({ daily, byStatus, top, paymentData = [] }: DashboardChartsProps) {
 
   const totalOmzetPeriod = daily.reduce((acc, d) => acc + d.masuk, 0);
   const totalKeluarPeriod = daily.reduce((acc, d) => acc + d.keluar, 0);
