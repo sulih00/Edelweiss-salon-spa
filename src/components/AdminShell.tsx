@@ -6,7 +6,7 @@ import Image from "next/image";
 import {
   LayoutDashboard, CalendarCheck, Scissors, Wallet, TicketPercent,
   Image as ImageIcon, Users, Briefcase, ShieldCheck, ShoppingCart,
-  Menu, Globe, LogOut, Bell, ChevronDown, CalendarDays, CircleCheck, FileText, Landmark, MessageSquareHeart,
+  Menu, Globe, LogOut, Bell, ChevronDown, CalendarDays, CircleCheck, FileText, Landmark, MessageSquareHeart, MapPin,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
@@ -24,6 +24,7 @@ const icons: Record<string, React.ReactNode> = {
   pelanggan: <Users size={18} />,
   karyawan: <Briefcase size={18} />,
   users: <ShieldCheck size={18} />,
+  lokasi: <MapPin size={18} />,
 };
 
 export type AdminMenu = { href: string; label: string; icon: string };
