@@ -3,6 +3,9 @@ import { prisma } from "@/lib/prisma";
 
 const BASE = process.env.NEXT_PUBLIC_SITE_URL ?? "https://edelweiss-salon-spa.local";
 
+export const dynamic = "force-dynamic";
+export const revalidate = 0;
+
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   const staticRoutes = ["", "/tentang", "/layanan", "/promo", "/galeri", "/testimoni", "/booking", "/kontak"].map((p) => ({
     url: `${BASE}${p || "/"}`,
@@ -11,24 +14,29 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     priority: p === "" ? 1 : 0.7,
   }));
 
-  const [produk, promo] = await Promise.all([
-    prisma.produk.findMany({ where: { aktif: true, isLayanan: true }, select: { id: true } }),
-    prisma.promo.findMany({ where: { aktif: true }, select: { id: true } }),
-  ]);
+  try {
+    const [produk, promo] = await Promise.all([
+      prisma.produk.findMany({ where: { aktif: true, isLayanan: true }, select: { id: true } }),
+      prisma.promo.findMany({ where: { aktif: true }, select: { id: true } }),
+    ]);
 
-  return [
-    ...staticRoutes,
-    ...produk.map((p) => ({
-      url: `${BASE}/booking?layanan=${p.id}`,
-      lastModified: new Date(),
-      changeFrequency: "monthly" as const,
-      priority: 0.5,
-    })),
-    ...promo.map(() => ({
-      url: `${BASE}/promo`,
-      lastModified: new Date(),
-      changeFrequency: "weekly" as const,
-      priority: 0.6,
-    })),
-  ];
+    return [
+      ...staticRoutes,
+      ...produk.map((p) => ({
+        url: `${BASE}/booking?layanan=${p.id}`,
+        lastModified: new Date(),
+        changeFrequency: "monthly" as const,
+        priority: 0.5,
+      })),
+      ...promo.map(() => ({
+        url: `${BASE}/promo`,
+        lastModified: new Date(),
+        changeFrequency: "weekly" as const,
+        priority: 0.6,
+      })),
+    ];
+  } catch {
+    // Saat build di Vercel DB belum tentu reachable -> fallback ke static saja
+    return staticRoutes;
+  }
 }
