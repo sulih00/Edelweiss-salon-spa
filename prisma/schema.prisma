@@ -1,0 +1,205 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+enum Role {
+  OWNER
+  ADMIN
+  KASIR
+  USER
+}
+
+enum BookingStatus {
+  BARU
+  DIKONFIRMASI
+  SELESAI
+  BATAL
+}
+
+enum TipeTransaksi {
+  MASUK
+  KELUAR
+}
+
+model User {
+  id           String   @id @default(cuid())
+  name         String
+  email        String   @unique
+  passwordHash String
+  role         Role     @default(ADMIN)
+  createdAt    DateTime @default(now())
+  transaksi    TransaksiKeuangan[] @relation("DibuatOleh")
+
+  @@index([role])
+}
+
+model Karyawan {
+  id        String   @id @default(cuid())
+  nama      String
+  jabatan   String   @default("Terapis")
+  telepon   String?
+  komisiPersen Int   @default(0)
+  aktif     Boolean  @default(true)
+  createdAt DateTime @default(now())
+  bookings  Booking[]
+
+  @@index([aktif])
+}
+
+model KategoriProduk {
+  id     String   @id @default(cuid())
+  nama   String   @unique
+  produk Produk[]
+}
+
+model Produk {
+  id         String   @id @default(cuid())
+  nama       String
+  kategoriId String
+  // Kategori yang masih dipakai produk TIDAK BOLEH dihapus
+  kategori   KategoriProduk @relation(fields: [kategoriId], references: [id], onDelete: Restrict, onUpdate: Cascade)
+  harga      Int      @default(0)
+  durasiMenit Int     @default(60)
+  stok       Int      @default(0)
+  foto       String?
+  deskripsi  String?
+  aktif      Boolean  @default(true)
+  isLayanan  Boolean  @default(true)
+  createdAt  DateTime @default(now())
+  bookings   Booking[]
+
+  @@index([kategoriId])
+  @@index([aktif, isLayanan])
+}
+
+model Pelanggan {
+  id        String   @id @default(cuid())
+  nama      String
+  wa        String
+  alamat    String?
+  poin      Int      @default(0)
+  createdAt DateTime @default(now())
+  bookings  Booking[]
+
+  @@index([wa])
+}
+
+enum TipeDiskon {
+  PERSEN
+  NOMINAL
+}
+
+model Booking {
+  id         String        @id @default(cuid())
+  pelangganId String
+  // Pelanggan & produk yang sudah punya booking TIDAK BOLEH dihapus (histori aman)
+  pelanggan  Pelanggan     @relation(fields: [pelangganId], references: [id], onDelete: Restrict, onUpdate: Cascade)
+  produkId   String
+  produk     Produk        @relation(fields: [produkId], references: [id], onDelete: Restrict, onUpdate: Cascade)
+  karyawanId String?
+  // Karyawan yang dihapus → jadwal lama tetap tersimpan, kolom jadi NULL
+  karyawan   Karyawan?     @relation(fields: [karyawanId], references: [id], onDelete: SetNull, onUpdate: Cascade)
+  jadwal     DateTime
+  status     BookingStatus @default(BARU)
+  catatan    String?
+  buktiTF    String?
+  promoId    String?
+  // Promo yang dihapus → booking lama tetap, kolom jadi NULL (diskon nominal tetap tercatat)
+  promo      Promo?        @relation(fields: [promoId], references: [id], onDelete: SetNull, onUpdate: Cascade)
+  diskon     Int           @default(0)
+  createdAt  DateTime      @default(now())
+  transaksi  TransaksiKeuangan[]
+
+  @@index([status, jadwal])
+  @@index([pelangganId])
+  @@index([produkId])
+}
+
+model Promo {
+  id          String     @id @default(cuid())
+  kode        String     @unique
+  nama        String
+  deskripsi   String?
+  tipe        TipeDiskon @default(PERSEN)
+  nilai       Int        @default(10)
+  minBelanja  Int        @default(0)
+  maxDiskon   Int?
+  kuota       Int?
+  terpakai    Int        @default(0)
+  mulai       DateTime   @default(now())
+  berakhir    DateTime?
+  aktif       Boolean    @default(true)
+  createdAt   DateTime   @default(now())
+  bookings    Booking[]
+
+  @@index([aktif, mulai, berakhir])
+}
+
+model TransaksiKeuangan {
+  id          String        @id @default(cuid())
+  tanggal     DateTime      @default(now())
+  tipe        TipeTransaksi
+  kategori    String
+  jumlah      Int
+  keterangan  String?
+  bookingId   String?
+  // Booking yang sudah tercatat di keuangan TIDAK BOLEH dihapus (audit aman)
+  booking     Booking?      @relation(fields: [bookingId], references: [id], onDelete: Restrict, onUpdate: Cascade)
+  dibuatOlehId String?
+  // User yang dihapus → transaksi tetap, kolom jadi NULL
+  dibuatOleh  User?         @relation("DibuatOleh", fields: [dibuatOlehId], references: [id], onDelete: SetNull, onUpdate: Cascade)
+  createdAt   DateTime      @default(now())
+
+  @@index([tanggal])
+  @@index([tipe, tanggal])
+  @@index([bookingId])
+}
+
+model Rekening {
+  id        String   @id @default(cuid())
+  bank      String
+  nomor     String
+  atasNama  String
+  aktif     Boolean  @default(true)
+  urutan    Int      @default(0)
+  createdAt DateTime @default(now())
+
+  @@index([aktif])
+}
+
+model Galeri {
+  id     String @id @default(cuid())
+  foto   String
+  judul  String?
+  tampil Boolean @default(true)
+
+  @@index([tampil])
+}
+
+model Testimoni {
+  id     String @id @default(cuid())
+  nama   String
+  isi    String
+  rating Int    @default(5)
+  tampil Boolean @default(true)
+
+  @@index([tampil])
+}
+
+model Lokasi {
+  id        String   @id @default(cuid())
+  nama      String   @default("Edelweiss Salon & Spa")
+  alamat    String?
+  lat       Float
+  lon       Float
+  zoom      Int      @default(15)
+  utama     Boolean  @default(true)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
