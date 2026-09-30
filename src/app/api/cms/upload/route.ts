@@ -1,8 +1,8 @@
 import { NextResponse } from "next/server";
 import { requireRoles } from "@/lib/roles";
-import { writeFile, mkdir } from "fs/promises";
 import path from "path";
 import crypto from "crypto";
+import { supabaseServer, BUKTI_BUCKET } from "@/lib/supabase";
 
 const MAX = 2 * 1024 * 1024; // 2MB
 const ALLOWED_EXTS = [".jpg", ".jpeg", ".png", ".webp"];
@@ -24,11 +24,15 @@ export async function POST(req: Request) {
     }
 
     const bytes = Buffer.from(await file.arrayBuffer());
-    const name = crypto.randomBytes(12).toString("hex") + ext;
-    const dir = path.join(process.cwd(), "public", "uploads");
-    await mkdir(dir, { recursive: true });
-    await writeFile(path.join(dir, name), bytes);
-    return NextResponse.json({ url: `/uploads/${name}` });
+    const name = "cms-" + crypto.randomBytes(12).toString("hex") + ext;
+    const supa = supabaseServer();
+    const { error: upErr } = await supa.storage.from(BUKTI_BUCKET).upload(name, bytes, {
+      contentType: file.type || "image/jpeg",
+      upsert: false,
+    });
+    if (upErr) throw new Error(upErr.message);
+    const { data } = supa.storage.from(BUKTI_BUCKET).getPublicUrl(name);
+    return NextResponse.json({ url: data.publicUrl });
   } catch (err) {
     console.error("Gagal upload file:", err);
     return NextResponse.json({ error: "Gagal memproses file upload" }, { status: 500 });

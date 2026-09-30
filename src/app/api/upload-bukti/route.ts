@@ -1,12 +1,13 @@
 import { NextResponse } from "next/server";
-import { writeFile, mkdir } from "fs/promises";
 import path from "path";
 import crypto from "crypto";
+import { supabaseServer, BUKTI_BUCKET } from "@/lib/supabase";
 
 const MAX = 2 * 1024 * 1024; // 2MB
 const ALLOWED_EXTS = [".jpg", ".jpeg", ".png", ".webp"];
 
 // Upload publik untuk bukti transfer booking (tanpa login).
+// Disimpan ke Supabase Storage (bucket "bukti") agar awet di Vercel.
 export async function POST(req: Request) {
   try {
     const form = await req.formData();
@@ -22,13 +23,17 @@ export async function POST(req: Request) {
 
     const bytes = Buffer.from(await file.arrayBuffer());
     const name = "tf-" + crypto.randomBytes(10).toString("hex") + ext;
-    const dir = path.join(process.cwd(), "public", "uploads");
-    await mkdir(dir, { recursive: true });
-    await writeFile(path.join(dir, name), bytes);
-    return NextResponse.json({ url: `/uploads/${name}` });
+    const supa = supabaseServer();
+    const { error } = await supa.storage.from(BUKTI_BUCKET).upload(name, bytes, {
+      contentType: file.type || "image/jpeg",
+      upsert: false,
+    });
+    if (error) throw new Error(error.message);
+    const { data } = supa.storage.from(BUKTI_BUCKET).getPublicUrl(name);
+    return NextResponse.json({ url: data.publicUrl });
   } catch (err) {
     console.error("Upload bukti transfer error:", err);
-    return NextResponse.json({ error: "Gagal mengunggah bukti transfer" }, { status: 500 });
+    const msg = err instanceof Error ? err.message : "Gagal mengunggah bukti transfer";
+    return NextResponse.json({ error: `Gagal mengunggah bukti transfer: ${msg}` }, { status: 500 });
   }
 }
-
