@@ -68,7 +68,29 @@ export async function GET(req: Request) {
 
     return NextResponse.json({ tanggal: tgl, slots: slotsResult });
   } catch (e) {
-    return NextResponse.json({ error: e instanceof Error ? e.message : "Gagal mengambil slot" }, { status: 500 });
+    console.error("[api/booking/slots] DB gagal, fallback slot kosong:", (e as Error)?.message ?? e);
+    // Jangan 500: kembalikan slot default agar halaman booking tetap bisa dibuka.
+    // Frontend bisa pakai flag `stale` untuk tampilkan peringatan.
+    const now = new Date();
+    const todayLocalStr = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}-${String(now.getDate()).padStart(2, "0")}`;
+    let tglFallback = todayLocalStr;
+    try {
+      const { searchParams } = new URL(req.url);
+      const t = searchParams.get("tanggal");
+      if (t && /^\d{4}-\d{2}-\d{2}$/.exec(t)) tglFallback = t;
+    } catch {
+      /* abaikan */
+    }
+    const isToday = tglFallback === todayLocalStr;
+    return NextResponse.json({
+      tanggal: tglFallback,
+      stale: true,
+      slots: SLOTS.map((jam) => {
+        const slotTime = new Date(`${tglFallback}T${jam}:00`);
+        const isPast = isToday && slotTime.getTime() <= now.getTime();
+        return { jam, isPast, bookedCount: 0, capacity: 1, terisi: isPast };
+      }),
+    });
   }
 }
 
