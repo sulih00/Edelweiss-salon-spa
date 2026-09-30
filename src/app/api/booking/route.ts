@@ -77,11 +77,17 @@ export async function POST(req: Request) {
       const newStartMs = jadwal.getTime();
       const newEndMs = newStartMs + durasiMenit * 60 * 1000;
 
-      // Cari booking terapis pada rentang hari yang sama
-      const startOfDay = new Date(jadwal);
-      startOfDay.setHours(0, 0, 0, 0);
-      const endOfDay = new Date(jadwal);
-      endOfDay.setHours(23, 59, 59, 999);
+      // Cari booking terapis pada rentang hari yang sama (hari WIB)
+      const WIB = 7 * 3600 * 1000;
+      const wibParts = new Intl.DateTimeFormat("en-CA", {
+        timeZone: "Asia/Jakarta",
+        year: "numeric",
+        month: "2-digit",
+        day: "2-digit",
+      }).format(jadwal);
+      const [wy, wm, wd] = wibParts.split("-").map(Number);
+      const startOfDay = new Date(Date.UTC(wy, wm - 1, wd) - WIB);
+      const endOfDay = new Date(Date.UTC(wy, wm - 1, wd + 1) - WIB - 1);
 
       const existingTherapistBookings = await prisma.booking.findMany({
         where: {
