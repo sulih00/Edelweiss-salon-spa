@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { prisma } from "@/lib/prisma";
+import { safeDb } from "@/lib/safe-db";
 import { rupiah } from "@/lib/utils";
 import { sessionRole } from "@/lib/roles";
 import { redirect } from "next/navigation";
@@ -23,20 +24,34 @@ export default async function LaporanPage({ searchParams }: { searchParams: Prom
   const akhir = new Date(y, m, 1);
   const labelBulan = awal.toLocaleDateString("id-ID", { month: "long", year: "numeric" });
 
-  const [trx, bookings, katGroup] = await Promise.all([
-    prisma.transaksiKeuangan.findMany({ where: { tanggal: { gte: awal, lt: akhir } }, orderBy: { tanggal: "asc" } }),
-    prisma.booking.findMany({
-      where: { jadwal: { gte: awal, lt: akhir }, status: { not: "BATAL" } },
-      include: { pelanggan: true, produk: true, promo: true },
-      orderBy: { jadwal: "asc" },
-    }),
-    prisma.transaksiKeuangan.groupBy({
-      by: ["tipe", "kategori"],
-      where: { tanggal: { gte: awal, lt: akhir } },
-      _sum: { jumlah: true },
-      _count: true,
-    }),
-  ]);
+  const [trx, bookings, katGroup] = await safeDb(
+    () =>
+      Promise.all([
+        prisma.transaksiKeuangan.findMany({ where: { tanggal: { gte: awal, lt: akhir } }, orderBy: { tanggal: "asc" } }),
+        prisma.booking.findMany({
+          where: { jadwal: { gte: awal, lt: akhir }, status: { not: "BATAL" } },
+          include: { pelanggan: true, produk: true, promo: true },
+          orderBy: { jadwal: "asc" },
+        }),
+        prisma.transaksiKeuangan.groupBy({
+          by: ["tipe", "kategori"],
+          where: { tanggal: { gte: awal, lt: akhir } },
+          _sum: { jumlah: true },
+          _count: true,
+        }),
+      ]),
+    [[], [], []] as unknown as [
+      { id: string; tanggal: Date; tipe: string; kategori: string; jumlah: number; keterangan: string | null }[],
+      {
+        id: string;
+        status: string;
+        diskon: number | null;
+        pelanggan: { nama: string };
+        produk: { nama: string; harga: number };
+      }[],
+      { tipe: string; kategori: string; _sum: { jumlah: number | null }; _count: number }[]
+    ]
+  );
 
   const masuk = trx.filter((t) => t.tipe === "MASUK").reduce((a, b) => a + b.jumlah, 0);
   const keluar = trx.filter((t) => t.tipe === "KELUAR").reduce((a, b) => a + b.jumlah, 0);

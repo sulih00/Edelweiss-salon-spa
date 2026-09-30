@@ -1,6 +1,7 @@
 import { redirect } from "next/navigation";
 import { sessionRole } from "@/lib/roles";
 import { prisma } from "@/lib/prisma";
+import { safeDb } from "@/lib/safe-db";
 import AdminShell, { type AdminMenu } from "@/components/AdminShell";
 
 const allMenu: (AdminMenu & { roles: string[] })[] = [
@@ -25,15 +26,19 @@ export default async function CmsLayout({ children }: { children: React.ReactNod
   if (!s) redirect("/login");
   const menu = allMenu.filter((m) => m.roles.includes(s.role)).map(({ href, label, icon }) => ({ href, label, icon }));
 
-  const [notifCount, pending] = await Promise.all([
-    prisma.booking.count({ where: { status: "BARU" } }),
-    prisma.booking.findMany({
-      where: { status: "BARU" },
-      include: { pelanggan: true, produk: true },
-      orderBy: { createdAt: "desc" },
-      take: 5,
-    }),
-  ]);
+  const [notifCount, pending] = await safeDb(
+    () =>
+      Promise.all([
+        prisma.booking.count({ where: { status: "BARU" } }),
+        prisma.booking.findMany({
+          where: { status: "BARU" },
+          include: { pelanggan: true, produk: true },
+          orderBy: { createdAt: "desc" },
+          take: 5,
+        }),
+      ]),
+    [0, []] as [number, { id: string; pelanggan: { nama: string }; produk: { nama: string }; jadwal: Date }[]]
+  );
 
   return (
     <AdminShell

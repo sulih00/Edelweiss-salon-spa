@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { prisma } from "@/lib/prisma";
+import { safeDb } from "@/lib/safe-db";
 import { rupiah, formatTanggal } from "@/lib/utils";
 import { PageHeader, Stat, TableShell, Th, Td, Badge } from "@/components/admin";
 import DashboardCharts, { type PaymentRow } from "./DashboardCharts";
@@ -19,41 +20,62 @@ export default async function CmsDashboard() {
 
   const startOfMonth = new Date(today.getFullYear(), today.getMonth(), 1);
 
+  type DashTuple = [
+    number,
+    number,
+    number,
+    { tipe: string; jumlah: number }[],
+    { tanggal: Date; tipe: string; jumlah: number; keterangan: string | null }[],
+    { status: string; _count: number }[],
+    { produkId: string; _count: number }[],
+    {
+      id: string;
+      status: string;
+      pelanggan: { nama: string; wa: string };
+      produk: { nama: string };
+      karyawan: { nama: string } | null;
+    }[],
+    { karyawanId: string | null; _count: number }[]
+  ];
   const [bookingHari, bookingBaru, produkAktif, transaksiHari, trx30, bookings30, topGroup, recent, topTherapistGroup] =
-    await Promise.all([
-      prisma.booking.count({ where: { jadwal: { gte: today } } }),
-      prisma.booking.count({ where: { status: "BARU" } }),
-      prisma.produk.count({ where: { aktif: true } }),
-      prisma.transaksiKeuangan.findMany({ where: { tanggal: { gte: today } } }),
-      prisma.transaksiKeuangan.findMany({
-        where: { tanggal: { gte: ago30 } },
-        select: { tanggal: true, tipe: true, jumlah: true, keterangan: true },
-      }),
-      prisma.booking.groupBy({ by: ["status"], where: { createdAt: { gte: ago30 } }, _count: true }),
-      prisma.booking.groupBy({
-        by: ["produkId"],
-        where: { status: { not: "BATAL" } },
-        _count: true,
-        orderBy: { _count: { produkId: "desc" } },
-        take: 5,
-      }),
-      prisma.booking.findMany({
-        include: { pelanggan: true, produk: true, karyawan: true },
-        orderBy: { createdAt: "desc" },
-        take: 8,
-      }),
-      prisma.booking.groupBy({
-        by: ["karyawanId"],
-        where: {
-          status: "SELESAI",
-          karyawanId: { not: null },
-          jadwal: { gte: startOfMonth },
-        },
-        _count: true,
-        orderBy: { _count: { karyawanId: "desc" } },
-        take: 1,
-      }),
-    ]);
+    await safeDb<DashTuple>(
+      () =>
+        Promise.all([
+          prisma.booking.count({ where: { jadwal: { gte: today } } }),
+          prisma.booking.count({ where: { status: "BARU" } }),
+          prisma.produk.count({ where: { aktif: true } }),
+          prisma.transaksiKeuangan.findMany({ where: { tanggal: { gte: today } } }),
+          prisma.transaksiKeuangan.findMany({
+            where: { tanggal: { gte: ago30 } },
+            select: { tanggal: true, tipe: true, jumlah: true, keterangan: true },
+          }),
+          prisma.booking.groupBy({ by: ["status"], where: { createdAt: { gte: ago30 } }, _count: true }),
+          prisma.booking.groupBy({
+            by: ["produkId"],
+            where: { status: { not: "BATAL" } },
+            _count: true,
+            orderBy: { _count: { produkId: "desc" } },
+            take: 5,
+          }),
+          prisma.booking.findMany({
+            include: { pelanggan: true, produk: true, karyawan: true },
+            orderBy: { createdAt: "desc" },
+            take: 8,
+          }),
+          prisma.booking.groupBy({
+            by: ["karyawanId"],
+            where: {
+              status: "SELESAI",
+              karyawanId: { not: null },
+              jadwal: { gte: startOfMonth },
+            },
+            _count: true,
+            orderBy: { _count: { karyawanId: "desc" } },
+            take: 1,
+          }),
+        ]) as unknown as Promise<DashTuple>,
+      [0, 0, 0, [], [], [], [], [], []]
+    );
 
   const omzetHari = transaksiHari.filter((t) => t.tipe === "MASUK").reduce((a, b) => a + b.jumlah, 0);
   const keluarHari = transaksiHari.filter((t) => t.tipe === "KELUAR").reduce((a, b) => a + b.jumlah, 0);
@@ -99,10 +121,14 @@ export default async function CmsDashboard() {
     .filter((p) => p.total > 0);
 
   // Top Products & Treatments
-  const prodNames = await prisma.produk.findMany({
-    where: { id: { in: topGroup.map((g) => g.produkId) } },
-    select: { id: true, nama: true },
-  });
+  const prodNames = await safeDb(
+    () =>
+      prisma.produk.findMany({
+        where: { id: { in: topGroup.map((g) => g.produkId) } },
+        select: { id: true, nama: true },
+      }),
+    [] as { id: string; nama: string }[]
+  );
 
   const top = topGroup.map((g) => ({
     layanan: (prodNames.find((p) => p.id === g.produkId)?.nama ?? "?").slice(0, 24),
@@ -113,7 +139,10 @@ export default async function CmsDashboard() {
   let topTherapistName = "—";
   let topTherapistCount = 0;
   if (topTherapistGroup.length > 0 && topTherapistGroup[0].karyawanId) {
-    const k = await prisma.karyawan.findUnique({ where: { id: topTherapistGroup[0].karyawanId } });
+    const k = await safeDb(
+      () => prisma.karyawan.findUnique({ where: { id: topTherapistGroup[0].karyawanId! } }),
+      null
+    );
     if (k) {
       topTherapistName = k.nama;
       topTherapistCount = topTherapistGroup[0]._count;

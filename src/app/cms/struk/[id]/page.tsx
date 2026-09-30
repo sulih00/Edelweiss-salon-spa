@@ -1,28 +1,37 @@
 import { notFound } from "next/navigation";
 import { prisma } from "@/lib/prisma";
+import { safeDb } from "@/lib/safe-db";
 import { formatTanggal } from "@/lib/utils";
 import StrukClientView from "./StrukClientView";
 
 export default async function StrukPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
-  const b = await prisma.booking.findUnique({
-    where: { id },
-    include: { pelanggan: true, produk: true, karyawan: true, promo: true, transaksi: true },
-  });
+  const b = await safeDb(
+    () =>
+      prisma.booking.findUnique({
+        where: { id },
+        include: { pelanggan: true, produk: true, karyawan: true, promo: true, transaksi: true },
+      }),
+    null
+  );
   if (!b) notFound();
 
   // Cari booking lain yang dibuat bersamaan dalam transaksi POS multi-item (selisih <= 15 detik)
   const fifteenSecBefore = new Date(b.createdAt.getTime() - 15 * 1000);
   const fifteenSecAfter = new Date(b.createdAt.getTime() + 15 * 1000);
 
-  const relatedBookings = await prisma.booking.findMany({
-    where: {
-      pelangganId: b.pelangganId,
-      createdAt: { gte: fifteenSecBefore, lte: fifteenSecAfter },
-    },
-    include: { produk: true, karyawan: true, promo: true },
-    orderBy: { createdAt: "asc" },
-  });
+  const relatedBookings = await safeDb(
+    () =>
+      prisma.booking.findMany({
+        where: {
+          pelangganId: b.pelangganId,
+          createdAt: { gte: fifteenSecBefore, lte: fifteenSecAfter },
+        },
+        include: { produk: true, karyawan: true, promo: true },
+        orderBy: { createdAt: "asc" },
+      }),
+    []
+  );
 
   const allBookings = relatedBookings.length > 0 ? relatedBookings : [b];
 
@@ -44,9 +53,13 @@ export default async function StrukPage({ params }: { params: Promise<{ id: stri
 
   // Ambil transaksi keuangan terkait untuk rincian metode bayar (termasuk split/DP)
   const bookingIds = allBookings.map((item) => item.id);
-  const txList = await prisma.transaksiKeuangan.findMany({
-    where: { bookingId: { in: bookingIds } },
-  });
+  const txList = await safeDb(
+    () =>
+      prisma.transaksiKeuangan.findMany({
+        where: { bookingId: { in: bookingIds } },
+      }),
+    []
+  );
 
   const noNota = `EWS-${b.createdAt.getFullYear()}-${b.id.slice(-6).toUpperCase()}`;
   const promoKode = allBookings.find((bk) => bk.promo?.kode)?.promo?.kode || b.promo?.kode || null;
