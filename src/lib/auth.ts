@@ -11,6 +11,7 @@ interface UserWithRole {
 }
 
 export const authOptions: NextAuthOptions = {
+  secret: process.env.NEXTAUTH_SECRET,
   session: { strategy: "jwt" },
   pages: { signIn: "/login" },
   providers: [
@@ -22,18 +23,23 @@ export const authOptions: NextAuthOptions = {
       },
       async authorize(credentials) {
         if (!credentials?.email || !credentials?.password) return null;
-        const user = await prisma.user.findUnique({
-          where: { email: credentials.email.toLowerCase() },
-        });
-        if (!user) return null;
-        const ok = await bcrypt.compare(credentials.password, user.passwordHash);
-        if (!ok) return null;
-        return {
-          id: user.id,
-          name: user.name,
-          email: user.email,
-          role: user.role,
-        } as unknown as { id: string; name: string; email: string };
+        try {
+          const user = await prisma.user.findUnique({
+            where: { email: credentials.email.toLowerCase() },
+          });
+          if (!user) return null;
+          const ok = await bcrypt.compare(credentials.password, user.passwordHash);
+          if (!ok) return null;
+          return {
+            id: user.id,
+            name: user.name,
+            email: user.email,
+            role: user.role,
+          } as unknown as { id: string; name: string; email: string };
+        } catch (e) {
+          console.error("[auth] authorize gagal (DB?):", (e as Error)?.message ?? e);
+          return null;
+        }
       },
     }),
   ],
