@@ -3,6 +3,7 @@ import { Clock, MessageCircle, MapPin, Navigation } from "lucide-react";
 import { SOSMED } from "@/lib/sosmed";
 import { IconInstagram, IconTikTok, IconWhatsApp } from "@/components/SocialIcons";
 import { prisma } from "@/lib/prisma";
+import { safeDb } from "@/lib/safe-db";
 import type { Metadata } from "next";
 
 export const metadata: Metadata = {
@@ -13,9 +14,12 @@ export const metadata: Metadata = {
 export const dynamic = "force-dynamic";
 
 export default async function Kontak() {
-  const lokasi =
-    (await prisma.lokasi.findFirst({ where: { utama: true } })) ??
-    (await prisma.lokasi.findFirst({ orderBy: { createdAt: "asc" } }));
+  const lokasi = await safeDb(
+    async () =>
+      (await prisma.lokasi.findFirst({ where: { utama: true } })) ??
+      (await prisma.lokasi.findFirst({ orderBy: { createdAt: "asc" } })),
+    null
+  );
 
   const lat = lokasi?.lat ?? -6.2088;
   const lon = lokasi?.lon ?? 106.8456;

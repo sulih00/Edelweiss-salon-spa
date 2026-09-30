@@ -1,6 +1,7 @@
 import Link from "next/link";
 import Image from "next/image";
 import { prisma } from "@/lib/prisma";
+import { safeDb } from "@/lib/safe-db";
 import { rupiah } from "@/lib/utils";
 import { Reveal, SectionHeading } from "@/components/motion";
 import { TestimonialCarousel, Faq } from "@/components/home-client";
@@ -9,7 +10,7 @@ import { Sparkles, Scissors, Flower2, Star, ArrowRight, BadgeCheck, Leaf, Clock,
 export const dynamic = "force-dynamic";
 
 export default async function Home() {
-  const dbKategori = await prisma.kategoriProduk.findMany({ select: { nama: true } });
+  const dbKategori = await safeDb(() => prisma.kategoriProduk.findMany({ select: { nama: true } }), []);
   const marqueeItems = dbKategori.length > 0
     ? dbKategori.map((k) => k.nama)
     : ["Hair Studio", "Body Massage", "Facial Brightening", "Creambath", "Manicure Pedicure", "Paket Bride"];
@@ -21,22 +22,30 @@ export default async function Home() {
     { q: "Berapa lama treatment?", a: "Haircut 45 menit, creambath 60 menit, massage 60–90 menit, facial 75 menit. Estimasi durasi selalu tertera di setiap layanan." },
   ];
 
-  const layanan = await prisma.produk.findMany({
-    where: { aktif: true, isLayanan: true },
-    include: { kategori: true },
-    take: 6,
-    orderBy: { createdAt: "desc" },
-  });
-  const testimoni = await prisma.testimoni.findMany({ where: { tampil: true }, take: 6 });
-  const galeri = await prisma.galeri.findMany({ where: { tampil: true }, take: 4 });
-  const bookingCount = await prisma.booking.count();
+  const layanan = await safeDb(
+    () =>
+      prisma.produk.findMany({
+        where: { aktif: true, isLayanan: true },
+        include: { kategori: true },
+        take: 6,
+        orderBy: { createdAt: "desc" },
+      }),
+    []
+  );
+  const testimoni = await safeDb(() => prisma.testimoni.findMany({ where: { tampil: true }, take: 6 }), []);
+  const galeri = await safeDb(() => prisma.galeri.findMany({ where: { tampil: true }, take: 4 }), []);
+  const bookingCount = await safeDb(() => prisma.booking.count(), 0);
   const now = new Date();
   const promos = (
-    await prisma.promo.findMany({
-      where: { aktif: true, mulai: { lte: now }, OR: [{ berakhir: null }, { berakhir: { gte: now } }] },
-      take: 3,
-      orderBy: { createdAt: "desc" },
-    })
+    await safeDb(
+      () =>
+        prisma.promo.findMany({
+          where: { aktif: true, mulai: { lte: now }, OR: [{ berakhir: null }, { berakhir: { gte: now } }] },
+          take: 3,
+          orderBy: { createdAt: "desc" },
+        }),
+      []
+    )
   ).filter((p) => p.kuota == null || p.terpakai < p.kuota);
 
   const bestSeller = layanan[0];

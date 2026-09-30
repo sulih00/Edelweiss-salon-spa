@@ -1,4 +1,5 @@
 import { prisma } from "@/lib/prisma";
+import { safeDb } from "@/lib/safe-db";
 import BookingForm from "./BookingForm";
 import { Reveal } from "@/components/motion";
 import type { Metadata } from "next";
@@ -13,17 +14,25 @@ export const dynamic = "force-dynamic";
 export default async function BookingPage({ searchParams }: { searchParams: Promise<{ layanan?: string }> }) {
   const sp = await searchParams;
   const [layanan, rekening, karyawan] = await Promise.all([
-    prisma.produk.findMany({ where: { aktif: true, isLayanan: true }, include: { kategori: true } }),
-    prisma.rekening.findMany({
-      where: { aktif: true },
-      orderBy: [{ urutan: "asc" }, { createdAt: "asc" }],
-      select: { bank: true, nomor: true, atasNama: true },
-    }),
-    prisma.karyawan.findMany({
-      where: { aktif: true },
-      select: { id: true, nama: true, jabatan: true },
-      orderBy: { nama: "asc" },
-    }),
+    safeDb(() => prisma.produk.findMany({ where: { aktif: true, isLayanan: true }, include: { kategori: true } }), []),
+    safeDb(
+      () =>
+        prisma.rekening.findMany({
+          where: { aktif: true },
+          orderBy: [{ urutan: "asc" }, { createdAt: "asc" }],
+          select: { bank: true, nomor: true, atasNama: true },
+        }),
+      []
+    ),
+    safeDb(
+      () =>
+        prisma.karyawan.findMany({
+          where: { aktif: true },
+          select: { id: true, nama: true, jabatan: true },
+          orderBy: { nama: "asc" },
+        }),
+      []
+    ),
   ]);
   return (
     <div className="grain relative overflow-hidden bg-gradient-to-b from-sage-50 to-cream-50">

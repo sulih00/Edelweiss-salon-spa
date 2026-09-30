@@ -1,4 +1,5 @@
 import { prisma } from "@/lib/prisma";
+import { safeDb } from "@/lib/safe-db";
 import LayananClient from "./LayananClient";
 import { Reveal } from "@/components/motion";
 import type { Metadata } from "next";
@@ -11,11 +12,15 @@ export const metadata: Metadata = {
 export const dynamic = "force-dynamic";
 
 export default async function Layanan() {
-  const data = await prisma.produk.findMany({
-    where: { aktif: true },
-    include: { kategori: true },
-    orderBy: [{ isLayanan: "desc" }, { harga: "asc" }],
-  });
+  const data = await safeDb(
+    () =>
+      prisma.produk.findMany({
+        where: { aktif: true },
+        include: { kategori: true },
+        orderBy: [{ isLayanan: "desc" }, { harga: "asc" }],
+      }),
+    []
+  );
 
   return (
     <div>

@@ -1,4 +1,5 @@
 import { prisma } from "@/lib/prisma";
+import { safeDb } from "@/lib/safe-db";
 import GaleriGrid from "./GaleriGrid";
 import { Reveal } from "@/components/motion";
 import type { Metadata } from "next";
@@ -11,7 +12,7 @@ export const metadata: Metadata = {
 export const dynamic = "force-dynamic";
 
 export default async function Galeri() {
-  const data = await prisma.galeri.findMany({ where: { tampil: true } });
+  const data = await safeDb(() => prisma.galeri.findMany({ where: { tampil: true } }), []);
   return (
     <div className="mx-auto max-w-6xl px-4 py-12">
       <Reveal>

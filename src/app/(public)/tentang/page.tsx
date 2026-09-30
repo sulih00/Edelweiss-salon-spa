@@ -1,4 +1,5 @@
 import { prisma } from "@/lib/prisma";
+import { safeDb } from "@/lib/safe-db";
 import { Reveal, SectionHeading } from "@/components/motion";
 import { Leaf, HeartHandshake, Sparkles, Award } from "lucide-react";
 import type { Metadata } from "next";
@@ -18,11 +19,15 @@ const values = [
 ];
 
 export default async function Tentang() {
-  const [bookingCount, karyawanCount, testimoniCount] = await Promise.all([
-    prisma.booking.count(),
-    prisma.karyawan.count({ where: { aktif: true } }),
-    prisma.testimoni.count({ where: { tampil: true } }),
-  ]);
+  const [bookingCount, karyawanCount, testimoniCount] = await safeDb(
+    () =>
+      Promise.all([
+        prisma.booking.count(),
+        prisma.karyawan.count({ where: { aktif: true } }),
+        prisma.testimoni.count({ where: { tampil: true } }),
+      ]),
+    [0, 0, 0] as [number, number, number]
+  );
 
   const timeline = [
     ["2018", "Awal mula", "Buka home-studio kecil dengan 2 kursi hair wash dan 1 bed massage."],

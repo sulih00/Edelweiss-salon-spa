@@ -1,4 +1,5 @@
 import { prisma } from "@/lib/prisma";
+import { safeDb } from "@/lib/safe-db";
 import TestimoniGrid from "./TestimoniGrid";
 import { Reveal } from "@/components/motion";
 import type { Metadata } from "next";
@@ -11,7 +12,7 @@ export const metadata: Metadata = {
 export const dynamic = "force-dynamic";
 
 export default async function Testimoni() {
-  const data = await prisma.testimoni.findMany({ where: { tampil: true } });
+  const data = await safeDb(() => prisma.testimoni.findMany({ where: { tampil: true } }), []);
   return (
     <div className="mx-auto max-w-5xl px-4 py-12">
       <Reveal>

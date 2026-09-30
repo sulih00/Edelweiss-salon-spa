@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { prisma } from "@/lib/prisma";
+import { safeDb } from "@/lib/safe-db";
 import { labelPromo } from "@/lib/promo";
 import { Reveal } from "@/components/motion";
 import { TicketPercent, ArrowRight } from "lucide-react";
@@ -14,10 +15,14 @@ export const dynamic = "force-dynamic";
 
 export default async function PromoPage() {
   const now = new Date();
-  const all = await prisma.promo.findMany({
-    where: { aktif: true, mulai: { lte: now }, OR: [{ berakhir: null }, { berakhir: { gte: now } }] },
-    orderBy: { createdAt: "desc" },
-  });
+  const all = await safeDb(
+    () =>
+      prisma.promo.findMany({
+        where: { aktif: true, mulai: { lte: now }, OR: [{ berakhir: null }, { berakhir: { gte: now } }] },
+        orderBy: { createdAt: "desc" },
+      }),
+    []
+  );
   const data = all.filter((p) => p.kuota == null || p.terpakai < p.kuota);
 
   return (
