@@ -8,15 +8,30 @@ function safeParse(url?: string) {
   if (!url) return { present: false };
   try {
     const u = new URL(url);
+    const nonAsciiSegs: string[] = [];
+    const scan = (name: string, v: string) => {
+      if ([...v].some((c) => (c.codePointAt(0) ?? 0) > 127)) nonAsciiSegs.push(name);
+    };
+    scan("protocol", u.protocol);
+    scan("user", u.username);
+    scan("pass", "x".repeat(u.password.length)); // hanya panjang, bukan isi
+    if ([...u.password].some((c) => (c.codePointAt(0) ?? 0) > 127)) nonAsciiSegs.push("pass");
+    scan("host", u.hostname);
+    scan("port", u.port);
+    scan("db", u.pathname);
+    scan("params", u.search);
     return {
       present: true,
       protocol: u.protocol,
       user: u.username,
       host: u.hostname,
+      hostCodes: [...u.hostname].map((c) => c.codePointAt(0)),
       port: u.port,
       db: u.pathname.replace(/^\//, ""),
       params: u.search,
       hasPassword: u.password.length > 0,
+      passLen: u.password.length,
+      nonAsciiSegs,
     };
   } catch {
     return { present: true, parseError: true };
