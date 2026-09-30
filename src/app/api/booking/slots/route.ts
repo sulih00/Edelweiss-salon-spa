@@ -14,25 +14,26 @@ export async function GET(req: Request) {
       return NextResponse.json({ error: "Format tanggal wajib YYYY-MM-DD" }, { status: 400 });
     }
 
-    let serviceDurationMin = 60;
-    if (produkId) {
-      const p = await prisma.produk.findUnique({ where: { id: produkId } });
-      if (p && p.durasiMenit) serviceDurationMin = p.durasiMenit;
-    }
-
     const start = new Date(`${tgl}T00:00:00`);
     const end = new Date(`${tgl}T23:59:59`);
 
-    const existingBookings = await prisma.booking.findMany({
-      where: {
-        status: { not: "BATAL" },
-        jadwal: { gte: start, lte: end },
-        ...(karyawanId && karyawanId !== "bebas" ? { karyawanId } : {}),
-      },
-      select: { id: true, jadwal: true, karyawanId: true, produk: { select: { durasiMenit: true } } },
-    });
+    // 1 round-trip DB: 3 query jalan paralel.
+    const [produk, existingBookings, activeTherapistsCount] = await Promise.all([
+      produkId ? prisma.produk.findUnique({ where: { id: produkId } }) : Promise.resolve(null),
+      prisma.booking.findMany({
+        where: {
+          status: { not: "BATAL" },
+          jadwal: { gte: start, lte: end },
+          ...(karyawanId && karyawanId !== "bebas" ? { karyawanId } : {}),
+        },
+        select: { id: true, jadwal: true, karyawanId: true, produk: { select: { durasiMenit: true } } },
+      }),
+      prisma.karyawan.count({ where: { aktif: true } }),
+    ]);
 
-    const activeTherapistsCount = await prisma.karyawan.count({ where: { aktif: true } });
+    let serviceDurationMin = 60;
+    if (produk?.durasiMenit) serviceDurationMin = produk.durasiMenit;
+
     const maxCapacityPerSlot = karyawanId && karyawanId !== "bebas" ? 1 : Math.max(1, activeTherapistsCount);
 
     const now = new Date();
