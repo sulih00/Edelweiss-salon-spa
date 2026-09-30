@@ -37,11 +37,14 @@ export async function GET(req: Request) {
     const maxCapacityPerSlot = karyawanId && karyawanId !== "bebas" ? 1 : Math.max(1, activeTherapistsCount);
 
     const now = new Date();
-    const todayLocalStr = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}-${String(now.getDate()).padStart(2, "0")}`;
+    // "Hari ini" menurut WIB, bukan jam server (UTC).
+    const wibNow = new Date(now.getTime() + 7 * 3600 * 1000);
+    const todayLocalStr = `${wibNow.getUTCFullYear()}-${String(wibNow.getUTCMonth() + 1).padStart(2, "0")}-${String(wibNow.getUTCDate()).padStart(2, "0")}`;
     const isToday = tgl === todayLocalStr;
 
     const slotsResult = SLOTS.map((jam) => {
-      const slotTime = new Date(`${tgl}T${jam}:00`);
+      // Slot adalah jam dinding WIB.
+      const slotTime = new Date(`${tgl}T${jam}:00+07:00`);
       const slotStartMs = slotTime.getTime();
       const slotEndMs = slotStartMs + serviceDurationMin * 60 * 1000;
       const isPast = isToday && slotTime.getTime() <= now.getTime();
@@ -73,7 +76,8 @@ export async function GET(req: Request) {
     // Jangan 500: kembalikan slot default agar halaman booking tetap bisa dibuka.
     // Frontend bisa pakai flag `stale` untuk tampilkan peringatan.
     const now = new Date();
-    const todayLocalStr = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}-${String(now.getDate()).padStart(2, "0")}`;
+    const wibNow = new Date(now.getTime() + 7 * 3600 * 1000);
+    const todayLocalStr = `${wibNow.getUTCFullYear()}-${String(wibNow.getUTCMonth() + 1).padStart(2, "0")}-${String(wibNow.getUTCDate()).padStart(2, "0")}`;
     let tglFallback = todayLocalStr;
     try {
       const { searchParams } = new URL(req.url);
@@ -87,7 +91,7 @@ export async function GET(req: Request) {
       tanggal: tglFallback,
       stale: true,
       slots: SLOTS.map((jam) => {
-        const slotTime = new Date(`${tglFallback}T${jam}:00`);
+        const slotTime = new Date(`${tglFallback}T${jam}:00+07:00`);
         const isPast = isToday && slotTime.getTime() <= now.getTime();
         return { jam, isPast, bookedCount: 0, capacity: 1, terisi: isPast };
       }),

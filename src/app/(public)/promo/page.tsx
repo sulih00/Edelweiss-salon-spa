@@ -53,7 +53,7 @@ export default async function PromoPage() {
                 </div>
                 <p className="mt-2 text-[11px] text-stone-400">
                   {p.minBelanja > 0 && <>Min Rp {p.minBelanja.toLocaleString("id-ID")} • </>}
-                  {p.berakhir ? <>Berlaku s/d {new Date(p.berakhir).toLocaleDateString("id-ID")}</> : <>Tanpa batas waktu</>}
+                  {p.berakhir ? <>Berlaku s/d {new Date(p.berakhir).toLocaleDateString("id-ID", { timeZone: "Asia/Jakarta" })}</> : <>Tanpa batas waktu</>}
                   {p.kuota ? <> • sisa {p.kuota - p.terpakai}</> : null}
                 </p>
               </div>

@@ -14,10 +14,24 @@ export function rupiah(n?: number | null) {
   }).format(val);
 }
 
+export const WIB_TZ = "Asia/Jakarta";
+
 export function formatTanggal(d: Date | string) {
   return new Intl.DateTimeFormat("id-ID", {
+    timeZone: WIB_TZ,
     day: "numeric",
     month: "long",
+    year: "numeric",
+    hour: "2-digit",
+    minute: "2-digit",
+  }).format(new Date(d));
+}
+
+export function formatTanggalSingkat(d: Date | string) {
+  return new Intl.DateTimeFormat("id-ID", {
+    timeZone: WIB_TZ,
+    day: "numeric",
+    month: "short",
     year: "numeric",
     hour: "2-digit",
     minute: "2-digit",

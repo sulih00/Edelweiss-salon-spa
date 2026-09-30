@@ -61,7 +61,8 @@ export default function BookingForm({
   const selectedLayanan = useMemo(() => layanan.find((l) => l.id === form.produkId), [layanan, form.produkId]);
   const selectedTerapisObj = useMemo(() => karyawan.find((k) => k.id === selectedKaryawan), [karyawan, selectedKaryawan]);
 
-  const fullJadwal = (selectedDate && selectedJam) ? `${selectedDate}T${selectedJam}:00` : "";
+  // WIB (UTC+7): slot yang dipilih adalah jam dinding Jakarta.
+  const fullJadwal = (selectedDate && selectedJam) ? `${selectedDate}T${selectedJam}:00+07:00` : "";
 
   const canNext1 = !!form.produkId;
   const canNext2 = form.nama.trim().length >= 2 && form.wa.replace(/\D/g, "").length >= 9;
@@ -139,7 +140,7 @@ export default function BookingForm({
     const j = await res.json();
     setLoading(false);
     if (res.ok) {
-      const jadwalTxt = `${new Date(j.jadwal).toLocaleDateString("id-ID", { weekday: "long", day: "numeric", month: "long" })} jam ${new Date(j.jadwal).toLocaleTimeString("id-ID", { hour: "2-digit", minute: "2-digit" })}`;
+      const jadwalTxt = `${new Date(j.jadwal).toLocaleDateString("id-ID", { timeZone: "Asia/Jakarta", weekday: "long", day: "numeric", month: "long" })} jam ${new Date(j.jadwal).toLocaleTimeString("id-ID", { timeZone: "Asia/Jakarta", hour: "2-digit", minute: "2-digit" })}`;
       const terapisTxt = selectedTerapisObj ? ` dengan terapis ${selectedTerapisObj.nama}` : "";
       setMsg(`Booking ${j.layanan}${terapisTxt} untuk ${jadwalTxt} diterima.${j.diskon ? ` Hemat ${rupiah(j.diskon)} (total ${rupiah(j.total)}).` : ""}`);
       setWaUrl(waLink(WA_ADMIN, pesanBookingBaru(j.nama, `${j.layanan}${terapisTxt}`, jadwalTxt, j.buktiTF)));

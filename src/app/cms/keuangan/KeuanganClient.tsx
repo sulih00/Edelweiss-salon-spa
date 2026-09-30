@@ -62,7 +62,7 @@ export default function KeuanganClient() {
 
   function exportExcel() {
     const rows = filtered.map((d) => ({
-      Tanggal: new Date(d.tanggal).toLocaleString("id-ID"),
+      Tanggal: new Date(d.tanggal).toLocaleString("id-ID", { timeZone: "Asia/Jakarta" }),
       Tipe: d.tipe,
       Kategori: d.kategori,
       Jumlah: d.jumlah,
@@ -76,7 +76,7 @@ export default function KeuanganClient() {
 
   function exportCSV() {
     const head = "tanggal,tipe,kategori,jumlah,keterangan\n";
-    const body = filtered.map((d) => `"${new Date(d.tanggal).toLocaleString("id-ID")}",${d.tipe},"${d.kategori}",${d.jumlah},"${(d.keterangan ?? "").replace(/"/g, "'")}"`).join("\n");
+    const body = filtered.map((d) => `"${new Date(d.tanggal).toLocaleString("id-ID", { timeZone: "Asia/Jakarta" })}",${d.tipe},"${d.kategori}",${d.jumlah},"${(d.keterangan ?? "").replace(/"/g, "'")}"`).join("\n");
     const blob = new Blob([head + body], { type: "text/csv" });
     const a = document.createElement("a");
     a.href = URL.createObjectURL(blob);
@@ -120,7 +120,7 @@ export default function KeuanganClient() {
           <tbody>
             {paginated.map((d) => (
               <tr key={d.id} className="transition hover:bg-stone-50">
-                <Td className="whitespace-nowrap text-stone-500">{new Date(d.tanggal).toLocaleString("id-ID")}</Td>
+                <Td className="whitespace-nowrap text-stone-500">{new Date(d.tanggal).toLocaleString("id-ID", { timeZone: "Asia/Jakarta" })}</Td>
                 <Td className="font-semibold">{d.kategori}</Td>
                 <Td className="max-w-[260px] truncate text-stone-500">{d.keterangan || "—"}</Td>
                 <Td><Badge tone={d.tipe === "MASUK" ? "green" : "red"}>{d.tipe}</Badge></Td>

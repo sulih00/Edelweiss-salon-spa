@@ -22,7 +22,7 @@ export default async function LaporanPage({ searchParams }: { searchParams: Prom
   const [y, m] = bulan.split("-").map(Number);
   const awal = new Date(y, m - 1, 1);
   const akhir = new Date(y, m, 1);
-  const labelBulan = awal.toLocaleDateString("id-ID", { month: "long", year: "numeric" });
+  const labelBulan = awal.toLocaleDateString("id-ID", { timeZone: "Asia/Jakarta", month: "long", year: "numeric" });
 
   const [trx, bookings, katGroup] = await safeDb(
     () =>
@@ -59,7 +59,7 @@ export default async function LaporanPage({ searchParams }: { searchParams: Prom
   const diskon = bookings.reduce((a, b) => a + (b.diskon ?? 0), 0);
 
   const rows: LaporanRow[] = trx.map((t) => ({
-    tanggal: new Date(t.tanggal).toLocaleString("id-ID"),
+    tanggal: new Date(t.tanggal).toLocaleString("id-ID", { timeZone: "Asia/Jakarta" }),
     keterangan: t.keterangan ?? "-",
     kategori: t.kategori,
     tipe: t.tipe,

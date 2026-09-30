@@ -97,7 +97,7 @@ export default function PromoClient() {
                 </Td>
                 <Td className="font-semibold">{labelPromo(p)}</Td>
                 <Td className="text-stone-500">{p.kuota ? `${p.terpakai}/${p.kuota}` : `${p.terpakai}x`}</Td>
-                <Td className="text-stone-500">{p.berakhir ? new Date(p.berakhir).toLocaleDateString("id-ID") : "—"}</Td>
+                <Td className="text-stone-500">{p.berakhir ? new Date(p.berakhir).toLocaleDateString("id-ID", { timeZone: "Asia/Jakarta" }) : "—"}</Td>
                 <Td>
                   <div className="flex items-center gap-2">
                     <Switch on={p.aktif} onClick={() => toggle(p)} />

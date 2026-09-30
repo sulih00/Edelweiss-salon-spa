@@ -168,7 +168,7 @@ export default function PelangganClient({ data }: { data: PelangganWithHistory[]
                         <div>
                           <p className="font-semibold text-stone-900">{p.nama}</p>
                           <p className="text-[11px] text-stone-400">
-                            Terdaftar {new Date(p.createdAt).toLocaleDateString("id-ID")}
+                            Terdaftar {new Date(p.createdAt).toLocaleDateString("id-ID", { timeZone: "Asia/Jakarta" })}
                           </p>
                         </div>
                       </div>
@@ -279,7 +279,7 @@ export default function PelangganClient({ data }: { data: PelangganWithHistory[]
                         return (
                           <tr key={b.id} className="transition hover:bg-stone-50">
                             <Td className="whitespace-nowrap text-xs text-stone-500">
-                              {new Date(b.jadwal).toLocaleString("id-ID")}
+                              {new Date(b.jadwal).toLocaleString("id-ID", { timeZone: "Asia/Jakarta" })}
                             </Td>
                             <Td className="font-semibold text-stone-900">{b.produk.nama}</Td>
                             <Td className="text-xs text-stone-600">{b.karyawan?.nama || "—"}</Td>

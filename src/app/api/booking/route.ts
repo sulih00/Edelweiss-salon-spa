@@ -102,10 +102,11 @@ export async function POST(req: Request) {
       });
 
       if (conflict) {
-        const cStartStr = new Date(conflict.jadwal).toLocaleTimeString("id-ID", { hour: "2-digit", minute: "2-digit" });
+        const wibOpts = { timeZone: "Asia/Jakarta", hour: "2-digit", minute: "2-digit" } as const;
+        const cStartStr = new Date(conflict.jadwal).toLocaleTimeString("id-ID", wibOpts);
         const cDur = conflict.produk?.durasiMenit || 60;
         const cEndMs = new Date(conflict.jadwal).getTime() + cDur * 60 * 1000;
-        const cEndStr = new Date(cEndMs).toLocaleTimeString("id-ID", { hour: "2-digit", minute: "2-digit" });
+        const cEndStr = new Date(cEndMs).toLocaleTimeString("id-ID", wibOpts);
 
         return NextResponse.json(
           {

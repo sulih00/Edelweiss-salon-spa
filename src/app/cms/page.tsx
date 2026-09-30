@@ -7,18 +7,35 @@ import DashboardCharts, { type PaymentRow } from "./DashboardCharts";
 import { Wallet, TrendingDown, CalendarCheck, BellRing, Sparkles, Award, ShoppingBag, Receipt } from "lucide-react";
 
 function dayKey(d: Date) {
-  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
+  // Kunci harian menurut WIB (en-CA menghasilkan YYYY-MM-DD).
+  return new Intl.DateTimeFormat("en-CA", {
+    timeZone: "Asia/Jakarta",
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+  }).format(d);
+}
+
+// Awal hari WIB ke-n (0 = hari ini) sebagai instant UTC.
+function wibDayStart(offsetDays = 0): Date {
+  const wib = new Date(Date.now() + 7 * 3600 * 1000);
+  const t = Date.UTC(wib.getUTCFullYear(), wib.getUTCMonth(), wib.getUTCDate() + offsetDays);
+  return new Date(t - 7 * 3600 * 1000);
 }
 
 export default async function CmsDashboard() {
-  const today = new Date();
-  today.setHours(0, 0, 0, 0);
-  const ago14 = new Date(today);
-  ago14.setDate(ago14.getDate() - 13);
-  const ago30 = new Date(today);
-  ago30.setDate(ago30.getDate() - 29);
+  const today = wibDayStart(0);
+  const ago14 = wibDayStart(-13);
+  const ago30 = wibDayStart(-29);
 
-  const startOfMonth = new Date(today.getFullYear(), today.getMonth(), 1);
+  const wibNowParts = new Intl.DateTimeFormat("en-CA", {
+    timeZone: "Asia/Jakarta",
+    year: "numeric",
+    month: "2-digit",
+  }).formatToParts(new Date());
+  const wibYear = Number(wibNowParts.find((p) => p.type === "year")?.value);
+  const wibMonth = Number(wibNowParts.find((p) => p.type === "month")?.value);
+  const startOfMonth = new Date(Date.UTC(wibYear, wibMonth - 1, 1) - 7 * 3600 * 1000);
 
   type DashTuple = [
     number,
@@ -80,12 +97,11 @@ export default async function CmsDashboard() {
   const omzetHari = transaksiHari.filter((t) => t.tipe === "MASUK").reduce((a, b) => a + b.jumlah, 0);
   const keluarHari = transaksiHari.filter((t) => t.tipe === "KELUAR").reduce((a, b) => a + b.jumlah, 0);
 
-  // Daily series (14 days)
+  // Daily series (14 days, tanggal WIB)
   const days: { key: string; label: string }[] = [];
   for (let i = 13; i >= 0; i--) {
-    const d = new Date(today);
-    d.setDate(d.getDate() - i);
-    days.push({ key: dayKey(d), label: d.toLocaleDateString("id-ID", { day: "numeric", month: "short" }) });
+    const d = wibDayStart(-i);
+    days.push({ key: dayKey(d), label: d.toLocaleDateString("id-ID", { timeZone: "Asia/Jakarta", day: "numeric", month: "short" }) });
   }
 
   const daily = days.map((d) => ({

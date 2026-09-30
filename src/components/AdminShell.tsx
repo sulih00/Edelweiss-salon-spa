@@ -187,7 +187,7 @@ export default function AdminShell({
                           </span>
                           <span className="min-w-0">
                             <span className="block truncate text-sm font-semibold text-stone-800">{n.nama} — {n.layanan}</span>
-                            <span className="block text-xs text-stone-400">{new Date(n.jadwal).toLocaleString("id-ID")}</span>
+                            <span className="block text-xs text-stone-400">{new Date(n.jadwal).toLocaleString("id-ID", { timeZone: "Asia/Jakarta" })}</span>
                           </span>
                         </Link>
                       ))}
