@@ -27,12 +27,15 @@ export async function POST(req: Request) {
 
 // Daftar promo aktif untuk halaman publik
 export async function GET() {
-  const now = new Date();
-  const data = await prisma.promo.findMany({
-    where: { aktif: true, mulai: { lte: now }, OR: [{ berakhir: null }, { berakhir: { gte: now } }] },
-    orderBy: { createdAt: "desc" },
-  });
-  return NextResponse.json(
-    data.filter((p) => p.kuota == null || p.terpakai < p.kuota)
-  );
+  try {
+    const now = new Date();
+    const data = await prisma.promo.findMany({
+      where: { aktif: true, mulai: { lte: now }, OR: [{ berakhir: null }, { berakhir: { gte: now } }] },
+      orderBy: { createdAt: "desc" },
+    });
+    return NextResponse.json(data.filter((p) => p.kuota == null || p.terpakai < p.kuota));
+  } catch (e) {
+    console.error("[api/promo] DB gagal, fallback kosong:", (e as Error)?.message ?? e);
+    return NextResponse.json([]);
+  }
 }

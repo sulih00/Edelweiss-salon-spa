@@ -6,11 +6,16 @@ export async function GET() {
   const authError = await requireAuth();
   if (authError) return authError;
 
-  const data = await prisma.lokasi.findMany({
-    orderBy: [{ utama: "desc" }, { createdAt: "asc" }],
-  });
+  try {
+    const data = await prisma.lokasi.findMany({
+      orderBy: [{ utama: "desc" }, { createdAt: "asc" }],
+    });
 
-  return NextResponse.json(data);
+    return NextResponse.json(data);
+  } catch (e) {
+    console.error("[api/cms/lokasi] DB gagal:", (e as Error)?.message ?? e);
+    return NextResponse.json([]);
+  }
 }
 
 export async function POST(req: Request) {

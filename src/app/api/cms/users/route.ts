@@ -1,32 +1,40 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
+import { withDb } from "@/lib/api-safe";
 import { requireRoles } from "@/lib/roles";
 import bcrypt from "bcryptjs";
 
 export async function GET() {
   const { error } = await requireRoles(["OWNER"]);
   if (error) return error;
-  const users = await prisma.user.findMany({ select: { id: true, name: true, email: true, role: true, createdAt: true }, orderBy: { createdAt: "asc" } });
-  return NextResponse.json(users);
+  try {
+    const users = await prisma.user.findMany({ select: { id: true, name: true, email: true, role: true, createdAt: true }, orderBy: { createdAt: "asc" } });
+    return NextResponse.json(users);
+  } catch (e) {
+    console.error("[api/cms/users] DB gagal:", (e as Error)?.message ?? e);
+    return NextResponse.json([]);
+  }
 }
 
 export async function POST(req: Request) {
   const { error } = await requireRoles(["OWNER"]);
   if (error) return error;
-  const b = await req.json();
-  if (!b.email || !b.password || !b.name) return NextResponse.json({ error: "Lengkapi nama/email/password" }, { status: 400 });
-  const exists = await prisma.user.findUnique({ where: { email: String(b.email).toLowerCase() } });
-  if (exists) return NextResponse.json({ error: "Email sudah dipakai" }, { status: 400 });
-  const user = await prisma.user.create({
-    data: {
-      name: b.name,
-      email: String(b.email).toLowerCase(),
-      passwordHash: await bcrypt.hash(b.password, 10),
-      role: ["KASIR", "ADMIN", "OWNER", "USER"].includes(b.role) ? b.role : "USER",
-    },
-    select: { id: true, name: true, email: true, role: true },
-  });
-  return NextResponse.json(user);
+  return withDb(async () => {
+    const b = await req.json();
+    if (!b.email || !b.password || !b.name) return NextResponse.json({ error: "Lengkapi nama/email/password" }, { status: 400 });
+    const exists = await prisma.user.findUnique({ where: { email: String(b.email).toLowerCase() } });
+    if (exists) return NextResponse.json({ error: "Email sudah dipakai" }, { status: 400 });
+    const user = await prisma.user.create({
+      data: {
+        name: b.name,
+        email: String(b.email).toLowerCase(),
+        passwordHash: await bcrypt.hash(b.password, 10),
+        role: ["KASIR", "ADMIN", "OWNER", "USER"].includes(b.role) ? b.role : "USER",
+      },
+      select: { id: true, name: true, email: true, role: true },
+    });
+    return NextResponse.json(user);
+  }, { logTag: "cms/users" });
 }
 
 export async function DELETE(req: Request) {

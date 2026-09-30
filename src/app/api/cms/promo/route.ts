@@ -1,19 +1,26 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
+import { withDb } from "@/lib/api-safe";
 import { requireAuth } from "@/lib/roles";
 import { requireRoles } from "@/lib/roles";
 
 export async function GET() {
   const a = await requireAuth(); if (a) return a;
-  const data = await prisma.promo.findMany({ orderBy: { createdAt: "desc" } });
-  return NextResponse.json(data);
+  try {
+    const data = await prisma.promo.findMany({ orderBy: { createdAt: "desc" } });
+    return NextResponse.json(data);
+  } catch (e) {
+    console.error("[api/cms/promo] DB gagal:", (e as Error)?.message ?? e);
+    return NextResponse.json([]);
+  }
 }
 
 export async function POST(req: Request) {
   const { error } = await requireRoles(["OWNER", "ADMIN"]);
   if (error) return error;
-  const b = await req.json();
-  if (!b.kode || !b.nama) return NextResponse.json({ error: "Kode & nama wajib" }, { status: 400 });
+  return withDb(async () => {
+    const b = await req.json();
+    if (!b.kode || !b.nama) return NextResponse.json({ error: "Kode & nama wajib" }, { status: 400 });
   const data = await prisma.promo.create({
     data: {
       kode: String(b.kode).trim().toUpperCase(),
@@ -28,15 +35,17 @@ export async function POST(req: Request) {
       berakhir: b.berakhir ? new Date(b.berakhir) : null,
       aktif: b.aktif !== false,
     },
-  });
-  return NextResponse.json(data);
+    });
+    return NextResponse.json(data);
+  }, { logTag: "cms/promo" });
 }
 
 export async function PUT(req: Request) {
   const { error } = await requireRoles(["OWNER", "ADMIN"]);
   if (error) return error;
-  const b = await req.json();
-  const { id, ...rest } = b;
+  return withDb(async () => {
+    const b = await req.json();
+    const { id, ...rest } = b;
   const data = await prisma.promo.update({
     where: { id },
     data: {
@@ -52,8 +61,9 @@ export async function PUT(req: Request) {
       berakhir: rest.berakhir ? new Date(rest.berakhir) : null,
       ...("aktif" in rest ? { aktif: !!rest.aktif } : {}),
     },
-  });
-  return NextResponse.json(data);
+    });
+    return NextResponse.json(data);
+  }, { logTag: "cms/promo" });
 }
 
 export async function DELETE(req: Request) {
@@ -62,12 +72,14 @@ export async function DELETE(req: Request) {
   const { searchParams } = new URL(req.url);
   const id = searchParams.get("id");
   if (!id) return NextResponse.json({ error: "no id" }, { status: 400 });
-  const dipakai = await prisma.booking.count({ where: { promoId: id } });
-  if (dipakai > 0)
-    return NextResponse.json(
-      { error: `Tidak bisa dihapus: promo sudah dipakai ${dipakai}x booking. Nonaktifkan saja agar histori aman.` },
-      { status: 409 }
-    );
-  await prisma.promo.delete({ where: { id } });
-  return NextResponse.json({ ok: true });
+  return withDb(async () => {
+    const dipakai = await prisma.booking.count({ where: { promoId: id } });
+    if (dipakai > 0)
+      return NextResponse.json(
+        { error: `Tidak bisa dihapus: promo sudah dipakai ${dipakai}x booking. Nonaktifkan saja agar histori aman.` },
+        { status: 409 }
+      );
+    await prisma.promo.delete({ where: { id } });
+    return NextResponse.json({ ok: true });
+  }, { logTag: "cms/promo" });
 }

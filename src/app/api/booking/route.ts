@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
+import { isDbDown } from "@/lib/api-safe";
 import { cekPromo } from "@/lib/promo";
 import { z } from "zod";
 
@@ -142,6 +143,11 @@ export async function POST(req: Request) {
       buktiTF: body.buktiTF?.trim() || null,
     });
   } catch (e) {
+    if (isDbDown(e))
+      return NextResponse.json(
+        { error: "Database Supabase tidak terjangkau. Coba lagi sebentar atau hubungi admin." },
+        { status: 503 }
+      );
     return NextResponse.json({ error: e instanceof Error ? e.message : "Gagal" }, { status: 400 });
   }
 }
