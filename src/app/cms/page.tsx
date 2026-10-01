@@ -1,10 +1,10 @@
 import Link from "next/link";
 import { prisma } from "@/lib/prisma";
 import { safeDb } from "@/lib/safe-db";
-import { rupiah, formatTanggal } from "@/lib/utils";
+import { rupiah } from "@/lib/utils";
 import { PageHeader, Stat, TableShell, Th, Td, Badge } from "@/components/admin";
 import DashboardCharts, { type PaymentRow } from "./DashboardCharts";
-import { Wallet, TrendingDown, CalendarCheck, BellRing, Sparkles, Award, ShoppingBag, Receipt } from "lucide-react";
+import { Wallet, TrendingDown, CalendarCheck, BellRing, Award, Receipt } from "lucide-react";
 
 function dayKey(d: Date) {
   // Kunci harian menurut WIB (en-CA menghasilkan YYYY-MM-DD).
@@ -25,7 +25,6 @@ function wibDayStart(offsetDays = 0): Date {
 
 export default async function CmsDashboard() {
   const today = wibDayStart(0);
-  const ago14 = wibDayStart(-13);
   const ago30 = wibDayStart(-29);
 
   const wibNowParts = new Intl.DateTimeFormat("en-CA", {

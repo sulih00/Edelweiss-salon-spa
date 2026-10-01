@@ -5,7 +5,20 @@ import { Modal, PageHeader, AddButton, TableShell, Th, Td, Badge, RowBtn, Empty,
 import { rupiah } from "@/lib/utils";
 import { Search } from "lucide-react";
 
-type P = { id: string; nama: string; harga: number; stok: number; isLayanan: boolean; aktif: boolean; foto?: string | null; kategori: { id: string; nama: string }; kategoriId: string; deskripsi?: string | null; durasiMenit: number };
+type P = {
+  id: string;
+  nama: string;
+  harga: number;
+  stok: number;
+  isLayanan: boolean;
+  aktif: boolean;
+  foto?: string | null;
+  kategori: { id: string; nama: string };
+  kategoriId: string;
+  deskripsi?: string | null;
+  durasiMenit: number;
+};
+
 type K = { id: string; nama: string };
 
 async function uploadFoto(file: File): Promise<string> {
@@ -17,13 +30,24 @@ async function uploadFoto(file: File): Promise<string> {
   return j.url as string;
 }
 
-const empty = { nama: "", kategoriId: "", harga: "100000", durasiMenit: "60", stok: "0", deskripsi: "", isLayanan: true, foto: "" };
+const emptyForm = {
+  nama: "",
+  kategoriId: "",
+  harga: "100000",
+  durasiMenit: "60",
+  stok: "0",
+  deskripsi: "",
+  isLayanan: true,
+  foto: "",
+};
 
 export default function ProdukClient({ canDelete = true }: { canDelete?: boolean }) {
   const { alert, confirm, toast } = useAlert();
   const [data, setData] = useState<P[]>([]);
   const [kat, setKat] = useState<K[]>([]);
-  const [form, setForm] = useState(empty);
+  const [form, setForm] = useState(emptyForm);
+  const [editingId, setEditingId] = useState<string | null>(null);
+
   const [uploading, setUploading] = useState(false);
   const [modal, setModal] = useState(false);
   const [saving, setSaving] = useState(false);
@@ -46,33 +70,58 @@ export default function ProdukClient({ canDelete = true }: { canDelete?: boolean
     return shown.slice((page - 1) * pageSize, page * pageSize);
   }, [shown, page, pageSize]);
 
-
   const load = useCallback(async () => {
-    const r = await fetch("/api/cms/produk");
-    const j = await r.json();
-    const produkList = Array.isArray(j) ? j : j.produk ?? [];
-    const katList = Array.isArray(j) ? [] : j.kategori ?? [];
-    setData(produkList);
-    setKat(katList);
-    if (katList[0]) setForm((f) => (f.kategoriId ? f : { ...f, kategoriId: katList[0].id }));
+    try {
+      const r = await fetch("/api/cms/produk");
+      const j = await r.json();
+      const produkList = Array.isArray(j) ? j : j.produk ?? [];
+      const katList = Array.isArray(j) ? [] : j.kategori ?? [];
+      setData(produkList);
+      setKat(katList);
+    } catch (e) {
+      console.error("Gagal memuat produk:", e);
+    }
   }, []);
 
   useEffect(() => {
-    let mounted = true;
+    let ignore = false;
     fetch("/api/cms/produk")
       .then((r) => r.json())
       .then((j) => {
-        if (!mounted) return;
-        const produkList = Array.isArray(j) ? j : j.produk ?? [];
-        const katList = Array.isArray(j) ? [] : j.kategori ?? [];
-        setData(produkList);
-        setKat(katList);
-        if (katList[0]) setForm((f) => (f.kategoriId ? f : { ...f, kategoriId: katList[0].id }));
-      });
+        if (!ignore) {
+          const produkList = Array.isArray(j) ? j : j.produk ?? [];
+          const katList = Array.isArray(j) ? [] : j.kategori ?? [];
+          setData(produkList);
+          setKat(katList);
+        }
+      })
+      .catch((e) => console.error(e));
+
     return () => {
-      mounted = false;
+      ignore = true;
     };
   }, []);
+
+  function openCreateModal() {
+    setEditingId(null);
+    setForm({ ...emptyForm, kategoriId: kat[0]?.id ?? "" });
+    setModal(true);
+  }
+
+  function openEditModal(p: P) {
+    setEditingId(p.id);
+    setForm({
+      nama: p.nama,
+      kategoriId: p.kategoriId,
+      harga: String(p.harga),
+      durasiMenit: String(p.durasiMenit),
+      stok: String(p.stok),
+      deskripsi: p.deskripsi || "",
+      isLayanan: p.isLayanan,
+      foto: p.foto || "",
+    });
+    setModal(true);
+  }
 
   async function onFile(e: React.ChangeEvent<HTMLInputElement>) {
     const f = e.target.files?.[0];
@@ -88,31 +137,82 @@ export default function ProdukClient({ canDelete = true }: { canDelete?: boolean
     setUploading(false);
   }
 
-  async function create(e: React.FormEvent) {
+  async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     setSaving(true);
-    await fetch("/api/cms/produk", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ ...form, harga: Number(form.harga) }) });
-    setSaving(false);
-    setForm({ ...empty, kategoriId: kat[0]?.id ?? "" });
-    setModal(false);
-    load();
+
+    const payload = {
+      id: editingId ?? undefined,
+      nama: form.nama,
+      kategoriId: form.kategoriId,
+      harga: Number(form.harga || 0),
+      durasiMenit: Number(form.durasiMenit || 60),
+      stok: Number(form.stok || 0),
+      deskripsi: form.deskripsi,
+      isLayanan: form.isLayanan,
+      foto: form.foto || null,
+    };
+
+    try {
+      const res = await fetch("/api/cms/produk", {
+        method: editingId ? "PUT" : "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload),
+      });
+
+      const json = await res.json();
+      setSaving(false);
+
+      if (!res.ok) {
+        await alert(json.error ?? "Gagal menyimpan produk/layanan", "Gagal", "error");
+        return;
+      }
+
+      toast.success(
+        editingId ? "Produk/Layanan berhasil diperbarui ✨" : "Produk/Layanan baru berhasil ditambahkan ✨"
+      );
+      setModal(false);
+      setEditingId(null);
+      setForm({ ...emptyForm, kategoriId: kat[0]?.id ?? "" });
+      load();
+    } catch (err: unknown) {
+      setSaving(false);
+      const msg = err instanceof Error ? err.message : "Terjadi kesalahan koneksi";
+      toast.error(msg);
+    }
   }
 
   async function toggle(p: P) {
-    await fetch("/api/cms/produk", { method: "PUT", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ id: p.id, aktif: !p.aktif }) });
-    load();
-  }
-  async function hapus(id: string) {
-    const isOk = await confirm("Hapus produk ini?", "Konfirmasi Hapus Produk");
-    if (!isOk) return;
-    const r = await fetch(`/api/cms/produk?id=${id}`, { method: "DELETE" });
-    if (!r.ok) {
-      const j = await r.json().catch(() => ({}));
-      await alert(j.error ?? "Gagal: hanya OWNER/ADMIN yang bisa hapus", "Akses Ditolak", "error");
-    } else {
-      toast.success("Produk berhasil dihapus.");
+    try {
+      await fetch("/api/cms/produk", {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ id: p.id, aktif: !p.aktif }),
+      });
+      toast.info(`Status "${p.nama}" diubah menjadi ${!p.aktif ? "Tampil" : "Sembunyi"}.`);
+      load();
+    } catch (e) {
+      console.error("Gagal mengubah status:", e);
     }
-    load();
+  }
+
+  async function hapus(id: string) {
+    const isOk = await confirm("Apakah Anda yakin ingin menghapus produk/layanan ini?", "Konfirmasi Hapus Produk");
+    if (!isOk) return;
+
+    try {
+      const r = await fetch(`/api/cms/produk?id=${id}`, { method: "DELETE" });
+      const j = await r.json().catch(() => ({}));
+      if (!r.ok) {
+        await alert(j.error ?? "Gagal: hanya OWNER/ADMIN yang diizinkan untuk menghapus", "Gagal Hapus", "error");
+      } else {
+        toast.success("Produk/Layanan berhasil dihapus.");
+        load();
+      }
+    } catch (e: unknown) {
+      const msg = e instanceof Error ? e.message : "Gagal menghapus produk";
+      toast.error(msg);
+    }
   }
 
   return (
@@ -120,7 +220,7 @@ export default function ProdukClient({ canDelete = true }: { canDelete?: boolean
       <PageHeader
         title="Produk & Layanan"
         desc={`${tampilCount} dari ${data.length} tampil di website.`}
-        action={<AddButton onClick={() => setModal(true)} label="Tambah Produk" />}
+        action={<AddButton onClick={openCreateModal} label="Tambah Produk" />}
       />
 
       <div className="mb-4 flex flex-col gap-2.5 lg:flex-row lg:items-center">
@@ -144,11 +244,20 @@ export default function ProdukClient({ canDelete = true }: { canDelete?: boolean
         </div>
       </div>
 
-      {shown.length === 0 ? <Empty text={data.length === 0 ? "Belum ada produk. Klik Tambah Produk." : "Tidak cocok dengan filter/pencarian."} /> : (
+      {shown.length === 0 ? (
+        <Empty text={data.length === 0 ? "Belum ada produk. Klik Tambah Produk." : "Tidak cocok dengan filter/pencarian."} />
+      ) : (
         <>
           <TableShell>
             <thead>
-              <tr><Th>Item</Th><Th>Kategori</Th><Th>Harga</Th><Th>Stok / Durasi</Th><Th>Tampil di Website</Th><Th className="text-right">Aksi</Th></tr>
+              <tr>
+                <Th>Item</Th>
+                <Th>Kategori</Th>
+                <Th>Harga</Th>
+                <Th>Stok / Durasi</Th>
+                <Th>Tampil di Website</Th>
+                <Th className="text-right">Aksi</Th>
+              </tr>
             </thead>
             <tbody>
               {paginated.map((p) => (
@@ -159,7 +268,9 @@ export default function ProdukClient({ canDelete = true }: { canDelete?: boolean
                         // eslint-disable-next-line @next/next/no-img-element
                         <img src={p.foto} alt="" className="h-10 w-10 rounded-lg object-cover" />
                       ) : (
-                        <span className="flex h-10 w-10 items-center justify-center rounded-lg bg-stone-100 text-xs font-bold text-stone-400">{p.nama.slice(0, 1)}</span>
+                        <span className="flex h-10 w-10 items-center justify-center rounded-lg bg-stone-100 text-xs font-bold text-stone-400">
+                          {p.nama.slice(0, 1)}
+                        </span>
                       )}
                       <div>
                         <p className="font-semibold text-stone-900">{p.nama}</p>
@@ -167,7 +278,9 @@ export default function ProdukClient({ canDelete = true }: { canDelete?: boolean
                       </div>
                     </div>
                   </Td>
-                  <Td><Badge>{p.kategori.nama}</Badge></Td>
+                  <Td>
+                    <Badge>{p.kategori.nama}</Badge>
+                  </Td>
                   <Td className="font-semibold">{rupiah(p.harga)}</Td>
                   <Td className="text-stone-500">
                     {p.isLayanan ? (
@@ -176,9 +289,7 @@ export default function ProdukClient({ canDelete = true }: { canDelete?: boolean
                       <div className="flex items-center gap-1.5">
                         <span>Stok {p.stok}</span>
                         {p.stok <= 5 && (
-                          <Badge tone="red">
-                            {p.stok === 0 ? "Habis" : "Menipis"}
-                          </Badge>
+                          <Badge tone="red">{p.stok === 0 ? "Habis" : "Menipis"}</Badge>
                         )}
                       </div>
                     )}
@@ -190,7 +301,10 @@ export default function ProdukClient({ canDelete = true }: { canDelete?: boolean
                     </div>
                   </Td>
                   <Td className="text-right">
-                    {canDelete && <RowBtn tone="danger" onClick={() => hapus(p.id)}>Hapus</RowBtn>}
+                    <div className="flex items-center justify-end gap-1.5">
+                      <RowBtn onClick={() => openEditModal(p)}>Edit</RowBtn>
+                      {canDelete && <RowBtn tone="danger" onClick={() => hapus(p.id)}>Hapus</RowBtn>}
+                    </div>
                   </Td>
                 </tr>
               ))}
@@ -207,22 +321,79 @@ export default function ProdukClient({ canDelete = true }: { canDelete?: boolean
         </>
       )}
 
-      <Modal open={modal} onClose={() => setModal(false)} title="Tambah Produk / Layanan" desc="Lengkapi data di bawah, lalu simpan." wide>
-        <form onSubmit={create} className="grid gap-3 md:grid-cols-2">
-          <div className="md:col-span-2"><Label>Nama</Label><Input value={form.nama} onChange={(e) => setForm({ ...form, nama: e.target.value })} required placeholder="cth Creambath Edelweiss" /></div>
-          <div><Label>Kategori</Label>
-            <select className="w-full rounded-xl border border-stone-300 px-3 py-2 text-sm" value={form.kategoriId} onChange={(e) => setForm({ ...form, kategoriId: e.target.value })}>
-              {kat.map((k) => <option key={k.id} value={k.id}>{k.nama}</option>)}
+      {/* Modal Tambah & Edit Produk */}
+      <Modal
+        open={modal}
+        onClose={() => setModal(false)}
+        title={editingId ? "Edit Produk / Layanan" : "Tambah Produk / Layanan"}
+        desc={editingId ? "Ubah data produk/layanan di bawah ini lalu simpan." : "Lengkapi data di bawah, lalu simpan."}
+        wide
+      >
+        <form onSubmit={handleSubmit} className="grid gap-3 md:grid-cols-2">
+          <div className="md:col-span-2">
+            <Label>Nama</Label>
+            <Input
+              value={form.nama}
+              onChange={(e) => setForm({ ...form, nama: e.target.value })}
+              required
+              placeholder="cth Creambath Edelweiss"
+            />
+          </div>
+          <div>
+            <Label>Kategori</Label>
+            <select
+              className="w-full rounded-xl border border-stone-300 px-3 py-2 text-sm outline-none focus:border-sage-600"
+              value={form.kategoriId}
+              onChange={(e) => setForm({ ...form, kategoriId: e.target.value })}
+            >
+              {kat.map((k) => (
+                <option key={k.id} value={k.id}>
+                  {k.nama}
+                </option>
+              ))}
             </select>
           </div>
-          <div><Label>Tipe</Label>
-            <select className="w-full rounded-xl border border-stone-300 px-3 py-2 text-sm" value={form.isLayanan ? "1" : "0"} onChange={(e) => setForm({ ...form, isLayanan: e.target.value === "1" })}>
-              <option value="1">Layanan</option><option value="0">Produk retail</option>
+          <div>
+            <Label>Tipe</Label>
+            <select
+              className="w-full rounded-xl border border-stone-300 px-3 py-2 text-sm outline-none focus:border-sage-600"
+              value={form.isLayanan ? "1" : "0"}
+              onChange={(e) => setForm({ ...form, isLayanan: e.target.value === "1" })}
+            >
+              <option value="1">Layanan</option>
+              <option value="0">Produk retail</option>
             </select>
           </div>
-          <div><Label>Harga (Rp)</Label><Input type="number" value={form.harga} onChange={(e) => setForm({ ...form, harga: e.target.value })} /></div>
-          <div><Label>Durasi (mnt) / Stok</Label><Input type="number" value={form.isLayanan ? form.durasiMenit : form.stok} onChange={(e) => setForm(form.isLayanan ? { ...form, durasiMenit: e.target.value } : { ...form, stok: e.target.value })} /></div>
-          <div className="md:col-span-2"><Label>Deskripsi</Label><Input value={form.deskripsi} onChange={(e) => setForm({ ...form, deskripsi: e.target.value })} /></div>
+          <div>
+            <Label>Harga (Rp)</Label>
+            <Input
+              type="number"
+              value={form.harga}
+              onChange={(e) => setForm({ ...form, harga: e.target.value })}
+            />
+          </div>
+          <div>
+            <Label>{form.isLayanan ? "Durasi (mnt)" : "Stok Barang"}</Label>
+            <Input
+              type="number"
+              value={form.isLayanan ? form.durasiMenit : form.stok}
+              onChange={(e) =>
+                setForm(
+                  form.isLayanan
+                    ? { ...form, durasiMenit: e.target.value }
+                    : { ...form, stok: e.target.value }
+                )
+              }
+            />
+          </div>
+          <div className="md:col-span-2">
+            <Label>Deskripsi</Label>
+            <Input
+              value={form.deskripsi}
+              onChange={(e) => setForm({ ...form, deskripsi: e.target.value })}
+              placeholder="Deskripsi singkat produk/layanan..."
+            />
+          </div>
           <div className="md:col-span-2">
             <Label>Foto (maks 2MB)</Label>
             <input type="file" accept="image/*" onChange={onFile} className="w-full text-sm" />
@@ -233,8 +404,16 @@ export default function ProdukClient({ canDelete = true }: { canDelete?: boolean
             {uploading && <p className="text-xs text-stone-400">Mengupload...</p>}
           </div>
           <div className="flex justify-end gap-2 md:col-span-2">
-            <button type="button" onClick={() => setModal(false)} className="rounded-full border border-stone-300 px-5 py-2.5 text-sm">Batal</button>
-            <Btn disabled={uploading || saving}>{saving ? "Menyimpan..." : "Simpan"}</Btn>
+            <button
+              type="button"
+              onClick={() => setModal(false)}
+              className="rounded-full border border-stone-300 px-5 py-2.5 text-sm font-medium hover:bg-stone-50 cursor-pointer"
+            >
+              Batal
+            </button>
+            <Btn disabled={uploading || saving}>
+              {saving ? "Menyimpan..." : editingId ? "Simpan Perubahan" : "Simpan Produk"}
+            </Btn>
           </div>
         </form>
       </Modal>

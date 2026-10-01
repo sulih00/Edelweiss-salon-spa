@@ -49,7 +49,18 @@ export async function PUT(req: Request) {
   return withDb(async () => {
     const b = await req.json();
     const { id, ...rest } = b;
-    const data = await prisma.produk.update({ where: { id }, data: { ...rest, harga: Number(rest.harga ?? 0) } });
+    const updateData: Record<string, unknown> = {};
+    if (rest.nama !== undefined) updateData.nama = String(rest.nama).trim();
+    if (rest.kategoriId !== undefined) updateData.kategoriId = rest.kategoriId;
+    if (rest.harga !== undefined) updateData.harga = Number(rest.harga);
+    if (rest.durasiMenit !== undefined) updateData.durasiMenit = Number(rest.durasiMenit);
+    if (rest.stok !== undefined) updateData.stok = Number(rest.stok);
+    if (rest.deskripsi !== undefined) updateData.deskripsi = rest.deskripsi;
+    if (rest.foto !== undefined) updateData.foto = rest.foto;
+    if (rest.isLayanan !== undefined) updateData.isLayanan = Boolean(rest.isLayanan);
+    if (rest.aktif !== undefined) updateData.aktif = Boolean(rest.aktif);
+
+    const data = await prisma.produk.update({ where: { id }, data: updateData });
     return NextResponse.json(data);
   }, { logTag: "cms/produk" });
 }

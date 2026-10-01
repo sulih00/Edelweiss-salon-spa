@@ -1,7 +1,7 @@
 "use client";
 import { useEffect, useState, useCallback } from "react";
 import { Input, Label, Btn, useAlert } from "@/components/ui";
-import { Modal, PageHeader, AddButton, TableShell, Th, Td, Badge, Empty, Stat } from "@/components/admin";
+import { Modal, PageHeader, AddButton, TableShell, Th, Td, Badge, RowBtn, Empty, Stat } from "@/components/admin";
 import { rupiah } from "@/lib/utils";
 import { Award, DollarSign, CalendarCheck } from "lucide-react";
 
@@ -16,7 +16,7 @@ type KomisiRow = {
   totalKomisi: number;
 };
 
-const empty = { nama: "", jabatan: "Terapis", telepon: "", komisiPersen: "10" };
+const emptyForm = { nama: "", jabatan: "Terapis", telepon: "", komisiPersen: "10" };
 
 function getBulanIni() {
   const n = new Date();
@@ -24,10 +24,13 @@ function getBulanIni() {
 }
 
 export default function KaryawanClient() {
-  const { alert, toast } = useAlert();
+  const { alert, confirm, toast } = useAlert();
   const [data, setData] = useState<K[]>([]);
-  const [form, setForm] = useState(empty);
+  const [form, setForm] = useState(emptyForm);
+  const [editingId, setEditingId] = useState<string | null>(null);
+
   const [modal, setModal] = useState(false);
+  const [saving, setSaving] = useState(false);
   const [bulan, setBulan] = useState(getBulanIni());
   const [komisiData, setKomisiData] = useState<KomisiRow[]>([]);
   const [summary, setSummary] = useState({ totalTreatment: 0, grandTotalOmzet: 0, grandTotalKomisi: 0 });
@@ -60,28 +63,103 @@ export default function KaryawanClient() {
   }, []);
 
   useEffect(() => {
-    Promise.resolve().then(() => {
+    let ignore = false;
+    fetch("/api/cms/karyawan")
+      .then((r) => r.json())
+      .then((j) => {
+        if (!ignore) setData(j.karyawan ?? []);
+      })
+      .catch((e) => console.error(e));
+
+    fetch(`/api/cms/karyawan/komisi?bulan=${bulan}`)
+      .then((r) => (r.ok ? r.json() : null))
+      .then((j) => {
+        if (!ignore && j) {
+          setKomisiData(j.rekap ?? []);
+          setSummary(j.summary ?? { totalTreatment: 0, grandTotalOmzet: 0, grandTotalKomisi: 0 });
+        }
+      })
+      .catch((e) => console.error(e));
+
+    return () => {
+      ignore = true;
+    };
+  }, [bulan]);
+
+  function openCreateModal() {
+    setEditingId(null);
+    setForm(emptyForm);
+    setModal(true);
+  }
+
+  function openEditModal(k: K) {
+    setEditingId(k.id);
+    setForm({
+      nama: k.nama,
+      jabatan: k.jabatan,
+      telepon: k.telepon || "",
+      komisiPersen: String(k.komisiPersen),
+    });
+    setModal(true);
+  }
+
+  async function handleSubmit(e: React.FormEvent) {
+    e.preventDefault();
+    setSaving(true);
+
+    const payload = {
+      id: editingId ?? undefined,
+      nama: form.nama,
+      jabatan: form.jabatan,
+      telepon: form.telepon,
+      komisiPersen: Number(form.komisiPersen),
+    };
+
+    try {
+      const r = await fetch("/api/cms/karyawan", {
+        method: editingId ? "PUT" : "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload),
+      });
+
+      setSaving(false);
+
+      if (!r.ok) {
+        await alert("Gagal: Hanya OWNER/ADMIN yang diizinkan untuk mengelola data karyawan", "Akses Ditolak", "error");
+        return;
+      }
+
+      toast.success(editingId ? "Data karyawan berhasil diperbarui!" : "Karyawan baru berhasil ditambahkan!");
+      setForm(emptyForm);
+      setEditingId(null);
+      setModal(false);
       loadData();
       loadKomisi(bulan);
-    });
-  }, [loadData, loadKomisi, bulan]);
-
-  async function submit(e: React.FormEvent) {
-    e.preventDefault();
-    const r = await fetch("/api/cms/karyawan", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ ...form, komisiPersen: Number(form.komisiPersen) }),
-    });
-    if (!r.ok) {
-      await alert("Gagal: Hanya OWNER/ADMIN yang diizinkan untuk menambah karyawan", "Akses Ditolak", "error");
-      return;
+    } catch (err: unknown) {
+      setSaving(false);
+      const msg = err instanceof Error ? err.message : "Gagal menyimpan karyawan";
+      toast.error(msg);
     }
-    toast.success("Karyawan baru berhasil ditambahkan!");
-    setForm(empty);
-    setModal(false);
-    loadData();
-    loadKomisi(bulan);
+  }
+
+  async function hapus(id: string) {
+    const isOk = await confirm("Apakah Anda yakin ingin menghapus data karyawan ini?", "Konfirmasi Hapus Karyawan");
+    if (!isOk) return;
+
+    try {
+      const r = await fetch(`/api/cms/karyawan?id=${id}`, { method: "DELETE" });
+      const j = await r.json().catch(() => ({}));
+      if (!r.ok) {
+        await alert(j.error ?? "Gagal menghapus karyawan", "Gagal Hapus", "error");
+      } else {
+        toast.success("Karyawan berhasil dihapus.");
+        loadData();
+        loadKomisi(bulan);
+      }
+    } catch (e: unknown) {
+      const msg = e instanceof Error ? e.message : "Terjadi kesalahan";
+      toast.error(msg);
+    }
   }
 
   return (
@@ -89,7 +167,7 @@ export default function KaryawanClient() {
       <PageHeader
         title="Karyawan & Komisi Terapis"
         desc={`${data.length} karyawan terdaftar & rekap komisi per terapis.`}
-        action={<AddButton onClick={() => setModal(true)} label="Tambah Karyawan" />}
+        action={<AddButton onClick={openCreateModal} label="Tambah Karyawan" />}
       />
 
       {/* Section 1: Daftar Karyawan */}
@@ -105,6 +183,7 @@ export default function KaryawanClient() {
                 <Th>Jabatan</Th>
                 <Th>Telepon</Th>
                 <Th className="text-right">Komisi (%)</Th>
+                <Th className="text-right">Aksi</Th>
               </tr>
             </thead>
             <tbody>
@@ -123,6 +202,14 @@ export default function KaryawanClient() {
                   </Td>
                   <Td className="text-stone-500">{k.telepon || "—"}</Td>
                   <Td className="text-right font-semibold text-sage-800">{k.komisiPersen}%</Td>
+                  <Td className="text-right">
+                    <div className="flex items-center justify-end gap-1.5">
+                      <RowBtn onClick={() => openEditModal(k)}>Edit</RowBtn>
+                      <RowBtn tone="danger" onClick={() => hapus(k.id)}>
+                        Hapus
+                      </RowBtn>
+                    </div>
+                  </Td>
                 </tr>
               ))}
             </tbody>
@@ -188,33 +275,62 @@ export default function KaryawanClient() {
         )}
       </div>
 
-      <Modal open={modal} onClose={() => setModal(false)} title="Tambah Karyawan" desc="Hanya OWNER/ADMIN yang bisa menambah.">
-        <form onSubmit={submit} className="grid gap-3">
+      {/* Modal Form Tambah / Edit Karyawan */}
+      <Modal
+        open={modal}
+        onClose={() => setModal(false)}
+        title={editingId ? "Edit Data Karyawan" : "Tambah Karyawan Baru"}
+        desc={editingId ? "Ubah data karyawan/terapis di bawah ini." : "Hanya OWNER/ADMIN yang bisa menambah."}
+      >
+        <form onSubmit={handleSubmit} className="grid gap-3">
           <div>
-            <Label>Nama</Label>
-            <Input value={form.nama} onChange={(e) => setForm({ ...form, nama: e.target.value })} required placeholder="Nama karyawan" />
+            <Label>Nama Lengkap</Label>
+            <Input
+              value={form.nama}
+              onChange={(e) => setForm({ ...form, nama: e.target.value })}
+              required
+              placeholder="Nama karyawan / terapis"
+            />
           </div>
           <div>
             <Label>Jabatan</Label>
-            <Input value={form.jabatan} onChange={(e) => setForm({ ...form, jabatan: e.target.value })} />
+            <Input
+              value={form.jabatan}
+              onChange={(e) => setForm({ ...form, jabatan: e.target.value })}
+              placeholder="cth Terapis, Hairstylist, Manager"
+            />
           </div>
           <div>
-            <Label>Telepon</Label>
-            <Input value={form.telepon} onChange={(e) => setForm({ ...form, telepon: e.target.value })} placeholder="08xx" />
+            <Label>Telepon / WhatsApp</Label>
+            <Input
+              value={form.telepon}
+              onChange={(e) => setForm({ ...form, telepon: e.target.value })}
+              placeholder="08xx"
+            />
           </div>
           <div>
-            <Label>Komisi (%)</Label>
-            <Input type="number" value={form.komisiPersen} onChange={(e) => setForm({ ...form, komisiPersen: e.target.value })} />
+            <Label>Komisi Terapis (%)</Label>
+            <Input
+              type="number"
+              value={form.komisiPersen}
+              onChange={(e) => setForm({ ...form, komisiPersen: e.target.value })}
+              placeholder="10"
+            />
           </div>
-          <div className="flex justify-end gap-2">
-            <button type="button" onClick={() => setModal(false)} className="rounded-full border border-stone-300 px-5 py-2.5 text-sm">
+          <div className="flex justify-end gap-2 pt-2">
+            <button
+              type="button"
+              onClick={() => setModal(false)}
+              className="rounded-full border border-stone-300 px-5 py-2.5 text-sm font-medium hover:bg-stone-50 cursor-pointer"
+            >
               Batal
             </button>
-            <Btn>Simpan</Btn>
+            <Btn disabled={saving}>
+              {saving ? "Menyimpan..." : editingId ? "Simpan Perubahan" : "Simpan Karyawan"}
+            </Btn>
           </div>
         </form>
       </Modal>
     </div>
   );
 }
-

@@ -3,7 +3,7 @@
 import { useState, useMemo } from "react";
 import { PageHeader, TableShell, Th, Td, Badge, Empty, Stat, Modal, Pagination } from "@/components/admin";
 import { rupiah } from "@/lib/utils";
-import { Users, Search, ShoppingBag, Phone, History, Sparkles, UserCheck } from "lucide-react";
+import { Users, Search, ShoppingBag, Phone, History, UserCheck } from "lucide-react";
 
 type BookingRecord = {
   id: string;

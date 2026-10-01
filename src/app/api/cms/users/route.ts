@@ -37,6 +37,31 @@ export async function POST(req: Request) {
   }, { logTag: "cms/users" });
 }
 
+export async function PUT(req: Request) {
+  const { error } = await requireRoles(["OWNER"]);
+  if (error) return error;
+  return withDb(async () => {
+    const b = await req.json();
+    const { id, name, email, password, role } = b;
+    if (!id) return NextResponse.json({ error: "Missing user ID" }, { status: 400 });
+
+    const updateData: Record<string, unknown> = {};
+    if (name) updateData.name = String(name).trim();
+    if (email) updateData.email = String(email).toLowerCase().trim();
+    if (role && ["KASIR", "ADMIN", "OWNER", "USER"].includes(role)) updateData.role = role;
+    if (password && String(password).trim().length > 0) {
+      updateData.passwordHash = await bcrypt.hash(String(password), 10);
+    }
+
+    const user = await prisma.user.update({
+      where: { id },
+      data: updateData,
+      select: { id: true, name: true, email: true, role: true },
+    });
+    return NextResponse.json(user);
+  }, { logTag: "cms/users" });
+}
+
 export async function DELETE(req: Request) {
   const { error, session } = await requireRoles(["OWNER"]);
   if (error) return error;
