@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation";
 import { Input, Label, useAlert } from "@/components/ui";
 import { rupiah } from "@/lib/utils";
 import {
-  Search, ShoppingCart, User, Scissors,
+  Search, ShoppingCart, User, Scissors, Calendar,
   CreditCard, TicketPercent, CheckCircle, ArrowRight, RefreshCw, Sparkles, Plus, Minus, Trash2, LayoutGrid, List, X, Check
 } from "lucide-react";
 
@@ -40,6 +40,17 @@ interface PelangganSummary {
   nama: string;
   wa: string;
   poin: number;
+}
+
+interface BookingActive {
+  id: string;
+  jadwal: string;
+  status: string;
+  nominalTF?: number | null;
+  buktiTF?: string | null;
+  pelanggan: { nama: string; wa: string };
+  produk: Produk;
+  karyawan?: { id: string; nama: string } | null;
 }
 
 type CartItem = { produk: Produk; karyawanId: string; qty: number };
@@ -255,6 +266,7 @@ export default function KasirClient() {
   const [karyawanList, setKaryawanList] = useState<Karyawan[]>([]);
   const [promoList, setPromoList] = useState<Promo[]>([]);
   const [pelangganList, setPelangganList] = useState<PelangganSummary[]>([]);
+  const [bookingList, setBookingList] = useState<BookingActive[]>([]);
   const [loading, setLoading] = useState(true);
 
   // View Mode state: Grid vs List
@@ -301,6 +313,7 @@ export default function KasirClient() {
         setKaryawanList(j.karyawan ?? []);
         setPromoList(j.promo ?? []);
         setPelangganList(j.pelanggan ?? []);
+        setBookingList(j.bookingList ?? []);
       }
     } catch (e) {
       console.error("Gagal load data POS:", e);
@@ -319,6 +332,7 @@ export default function KasirClient() {
           setKaryawanList(j.karyawan ?? []);
           setPromoList(j.promo ?? []);
           setPelangganList(j.pelanggan ?? []);
+          setBookingList(j.bookingList ?? []);
           setLoading(false);
         }
       })
@@ -333,6 +347,30 @@ export default function KasirClient() {
       ignore = true;
     };
   }, []);
+
+  const importBooking = useCallback(
+    (b: BookingActive) => {
+      setNama(b.pelanggan.nama);
+      setWa(b.pelanggan.wa);
+      if (b.produk) {
+        setCart([{ produk: b.produk, karyawanId: b.karyawan?.id ?? "", qty: 1 }]);
+      }
+      const nominal = b.nominalTF ?? 0;
+      if (nominal > 0 || b.buktiTF) {
+        setPaymentMode("DP");
+        setDpAmountInput(String(nominal || 50000));
+        setMetodeBayar("DEBIT");
+        toast.success(
+          `Booking ${b.pelanggan.nama} diimpor! DP ${nominal > 0 ? rupiah(nominal) : ""} dicatat sebagai DEBIT.`,
+          "Impor Booking",
+          3500
+        );
+      } else {
+        toast.info(`Booking ${b.pelanggan.nama} diimpor ke kasir.`, "Impor Booking", 2000);
+      }
+    },
+    [toast]
+  );
 
   // Cart Helper Handlers (Memoized)
   const addToCart = useCallback(
@@ -795,6 +833,32 @@ export default function KasirClient() {
                 <ShoppingCart size={24} className="mx-auto text-amber-600 opacity-80 mb-1" />
                 <p className="font-bold">Keranjang masih kosong</p>
                 <p className="text-[11px] text-amber-700">Pilih perawatan atau produk dari katalog di sebelah kiri.</p>
+              </div>
+            )}
+
+            {/* ONLINE BOOKING IMPORT */}
+            {bookingList.length > 0 && (
+              <div className="rounded-2xl border border-sage-200 bg-sage-50/80 p-3 text-xs space-y-1.5">
+                <div className="flex items-center justify-between font-bold text-sage-900">
+                  <span className="flex items-center gap-1.5">
+                    <Calendar size={14} className="text-sage-700" /> Impor Booking Online ({bookingList.length})
+                  </span>
+                </div>
+                <select
+                  onChange={(e) => {
+                    const b = bookingList.find((item) => item.id === e.target.value);
+                    if (b) importBooking(b);
+                  }}
+                  className="w-full rounded-xl border border-sage-300 bg-white p-2 font-medium text-stone-800 outline-none text-xs cursor-pointer"
+                  defaultValue=""
+                >
+                  <option value="" disabled>-- Pilih Booking Online untuk Diproses --</option>
+                  {bookingList.map((b) => (
+                    <option key={b.id} value={b.id}>
+                      {b.pelanggan.nama} - {b.produk.nama} {b.nominalTF ? `(DP DEBIT ${rupiah(b.nominalTF)})` : b.buktiTF ? "(Ada Bukti TF)" : ""}
+                    </option>
+                  ))}
+                </select>
               </div>
             )}
 

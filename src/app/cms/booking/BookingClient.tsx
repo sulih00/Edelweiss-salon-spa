@@ -13,6 +13,7 @@ type BookingItem = {
   status: string;
   diskon: number;
   buktiTF?: string | null;
+  nominalTF?: number | null;
   createdAt: string;
   pelanggan: { nama: string; wa: string };
   produk: { nama: string; harga: number };
@@ -155,18 +156,25 @@ export default function BookingClient({ data }: { data: BookingItem[] }) {
                       <Badge tone={statusTone(b.status)}>{b.status}</Badge>
                     </Td>
                     <Td>
-                      {b.buktiTF ? (
-                        <a href={b.buktiTF} target="_blank" rel="noreferrer">
-                          {/* eslint-disable-next-line @next/next/no-img-element */}
-                          <img
-                            src={b.buktiTF}
-                            alt="Bukti"
-                            className="h-10 w-10 rounded-lg border object-cover transition hover:scale-110"
-                          />
-                        </a>
-                      ) : (
-                        <span className="text-xs text-stone-300">—</span>
-                      )}
+                      <div className="flex flex-col gap-1 items-start">
+                        {b.buktiTF && (
+                          <a href={b.buktiTF} target="_blank" rel="noreferrer">
+                            {/* eslint-disable-next-line @next/next/no-img-element */}
+                            <img
+                              src={b.buktiTF}
+                              alt="Bukti"
+                              className="h-10 w-10 rounded-lg border object-cover transition hover:scale-110"
+                            />
+                          </a>
+                        )}
+                        {b.nominalTF && b.nominalTF > 0 ? (
+                          <span className="rounded bg-blue-50 px-1.5 py-0.5 text-[10px] font-bold text-blue-700 border border-blue-200">
+                            💳 DEBIT {rupiah(b.nominalTF)}
+                          </span>
+                        ) : !b.buktiTF ? (
+                          <span className="text-xs text-stone-300">—</span>
+                        ) : null}
+                      </div>
                     </Td>
                     <Td className="text-right">
                       <div className="flex justify-end gap-1.5">

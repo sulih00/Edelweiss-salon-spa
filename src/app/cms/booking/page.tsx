@@ -24,6 +24,7 @@ export default async function CmsBooking() {
     status: b.status,
     diskon: b.diskon ?? 0,
     buktiTF: b.buktiTF,
+    nominalTF: b.nominalTF,
     createdAt: b.createdAt ? b.createdAt.toISOString() : new Date().toISOString(),
     pelanggan: { nama: b.pelanggan?.nama || "Pelanggan", wa: b.pelanggan?.wa || "" },
     produk: { nama: b.produk?.nama || "Perawatan Salon", harga: b.produk?.harga ?? 0 },

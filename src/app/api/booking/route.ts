@@ -13,6 +13,7 @@ const schema = z.object({
   catatan: z.string().optional(),
   kodePromo: z.string().optional(),
   buktiTF: z.string().optional(),
+  nominalTF: z.number().or(z.string()).optional(),
 });
 
 export async function POST(req: Request) {
@@ -132,6 +133,8 @@ export async function POST(req: Request) {
     }
 
 
+    const nominalTF = Math.max(0, Math.floor(Number(body.nominalTF ?? 0)));
+
     const booking = await prisma.booking.create({
       data: {
         pelangganId: pelanggan.id,
@@ -143,6 +146,7 @@ export async function POST(req: Request) {
         promoId,
         diskon,
         buktiTF: body.buktiTF?.trim() || null,
+        nominalTF,
       },
     });
     return NextResponse.json({
@@ -156,6 +160,7 @@ export async function POST(req: Request) {
       diskon,
       total: produk.harga - diskon,
       buktiTF: body.buktiTF?.trim() || null,
+      nominalTF,
       promoNote,
     });
   } catch (e) {

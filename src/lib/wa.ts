@@ -7,12 +7,15 @@ export function waLink(phone: string, message: string) {
   return `https://wa.me/${normalized}?text=${encodeURIComponent(message)}`;
 }
 
-export function pesanBookingBaru(nama: string, layanan: string, jadwal: string, buktiTF?: string | null) {
+export function pesanBookingBaru(nama: string, layanan: string, jadwal: string, buktiTF?: string | null, nominalTF?: number | null) {
   let msg = `Halo Edelweiss Salon Spa! Saya ${nama}. Saya sudah booking ${layanan} untuk ${jadwal}.`;
+  if (nominalTF && nominalTF > 0) {
+    msg += `\nDP/Nominal Transfer: Rp ${nominalTF.toLocaleString("id-ID")}`;
+  }
   if (buktiTF) {
     const origin = typeof window !== "undefined" ? window.location.origin : "";
     const fullUrl = buktiTF.startsWith("http") ? buktiTF : `${origin}${buktiTF}`;
-    msg += `\n\nBukti Transfer: ${fullUrl}`;
+    msg += `\nBukti Transfer: ${fullUrl}`;
   }
   msg += ` Mohon konfirmasi ya. Terima kasih.`;
   return msg;

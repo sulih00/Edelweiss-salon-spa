@@ -109,6 +109,7 @@ model Booking {
   status     BookingStatus @default(BARU)
   catatan    String?
   buktiTF    String?
+  nominalTF  Int?          @default(0)
   promoId    String?
   // Promo yang dihapus → booking lama tetap, kolom jadi NULL (diskon nominal tetap tercatat)
   promo      Promo?        @relation(fields: [promoId], references: [id], onDelete: SetNull, onUpdate: Cascade)

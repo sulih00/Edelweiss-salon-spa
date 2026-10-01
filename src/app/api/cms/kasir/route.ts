@@ -7,7 +7,7 @@ export async function GET() {
   if (error) return error;
 
   try {
-    const [produk, karyawan, promo, pelanggan] = await Promise.all([
+    const [produk, karyawan, promo, pelanggan, bookingList] = await Promise.all([
       prisma.produk.findMany({
         where: { aktif: true },
         include: { kategori: true },
@@ -25,9 +25,15 @@ export async function GET() {
         select: { id: true, nama: true, wa: true, poin: true },
         orderBy: { nama: "asc" },
       }),
+      prisma.booking.findMany({
+        where: { status: { in: ["BARU", "DIKONFIRMASI"] } },
+        include: { pelanggan: true, produk: true, karyawan: true },
+        orderBy: { jadwal: "desc" },
+        take: 30,
+      }),
     ]);
 
-    return NextResponse.json({ produk, karyawan, promo, pelanggan });
+    return NextResponse.json({ produk, karyawan, promo, pelanggan, bookingList });
   } catch (err) {
     console.error("GET /api/cms/kasir Error:", err);
     return NextResponse.json({ error: "Gagal mengambil data kasir" }, { status: 500 });
