@@ -1,12 +1,12 @@
 "use client";
 
-import { useEffect, useState, useMemo, useCallback } from "react";
+import React, { useEffect, useState, useMemo, useCallback, useDeferredValue, memo } from "react";
 import { useRouter } from "next/navigation";
-import { Input, Label } from "@/components/ui";
+import { Input, Label, useAlert } from "@/components/ui";
 import { rupiah } from "@/lib/utils";
 import {
-  Search, ShoppingCart, User, Phone, Scissors,
-  CreditCard, TicketPercent, CheckCircle, ArrowRight, RefreshCw, Sparkles, Plus, Minus, Trash2, LayoutGrid, List, UserCheck, Tag, X, Check
+  Search, ShoppingCart, User, Scissors,
+  CreditCard, TicketPercent, CheckCircle, ArrowRight, RefreshCw, Sparkles, Plus, Minus, Trash2, LayoutGrid, List, X, Check
 } from "lucide-react";
 
 interface Produk {
@@ -42,8 +42,215 @@ interface PelangganSummary {
   poin: number;
 }
 
+type CartItem = { produk: Produk; karyawanId: string; qty: number };
+
+// --- MEMOIZED COMPONENTS FOR ULTRA FAST 60FPS POS PERFORMANCE ---
+
+const ProductGridCard = memo(function ProductGridCard({
+  p,
+  inCart,
+  qtyInCart,
+  onAddToCart,
+}: {
+  p: Produk;
+  inCart: boolean;
+  qtyInCart: number;
+  onAddToCart: (p: Produk) => void;
+}) {
+  return (
+    <div
+      onClick={() => onAddToCart(p)}
+      className={`group relative flex flex-col justify-between rounded-3xl border p-4 transition-all cursor-pointer ${
+        inCart
+          ? "border-sage-600 bg-sage-50/60 shadow-md ring-2 ring-sage-600/20"
+          : "border-stone-200/80 bg-white hover:border-sage-400 hover:shadow-md"
+      }`}
+    >
+      <div>
+        <div className="flex items-center justify-between gap-2 mb-2">
+          <span className="rounded-full bg-gold-100 px-2.5 py-0.5 text-[10px] font-bold text-gold-700 border border-gold-200">
+            {p.kategori?.nama || "Umum"}
+          </span>
+          <span className="text-[11px] font-semibold text-stone-500">
+            {p.durasiMenit ? `⏱ ${p.durasiMenit} Mnt` : `📦 Stok: ${p.stok}`}
+          </span>
+        </div>
+
+        <h3 className="font-semibold text-stone-900 text-sm group-hover:text-sage-800 transition line-clamp-2">
+          {p.nama}
+        </h3>
+      </div>
+
+      <div className="mt-4 flex items-end justify-between border-t border-stone-100 pt-3">
+        <div>
+          <span className="text-[10px] uppercase font-bold text-stone-400 block">Harga</span>
+          <span className="font-serif-display text-base font-bold text-sage-900">
+            {rupiah(p.harga)}
+          </span>
+        </div>
+
+        <button
+          type="button"
+          onClick={(e) => {
+            e.stopPropagation();
+            onAddToCart(p);
+          }}
+          className={`flex items-center gap-1.5 rounded-xl px-3 py-1.5 text-xs font-bold transition ${
+            inCart
+              ? "bg-sage-900 text-white shadow-sm hover:bg-sage-800"
+              : "bg-stone-100 text-stone-700 group-hover:bg-sage-700 group-hover:text-white"
+          }`}
+        >
+          {inCart ? (
+            <>
+              <CheckCircle size={14} className="text-gold-400" />
+              <span>(x{qtyInCart}) + Tambah</span>
+            </>
+          ) : (
+            <>
+              <Plus size={14} />
+              <span>Tambah</span>
+            </>
+          )}
+        </button>
+      </div>
+    </div>
+  );
+});
+
+const ProductTableRow = memo(function ProductTableRow({
+  p,
+  inCart,
+  qtyInCart,
+  onAddToCart,
+}: {
+  p: Produk;
+  inCart: boolean;
+  qtyInCart: number;
+  onAddToCart: (p: Produk) => void;
+}) {
+  return (
+    <tr
+      onClick={() => onAddToCart(p)}
+      className={`cursor-pointer transition ${
+        inCart ? "bg-sage-50/90 font-medium text-sage-950" : "hover:bg-stone-50 text-stone-800"
+      }`}
+    >
+      <td className="px-4 py-3 font-bold text-stone-900">
+        <div className="flex items-center gap-2">
+          {inCart && <Check size={14} className="text-sage-700 font-bold shrink-0" />}
+          <span>{p.nama}</span>
+        </div>
+      </td>
+      <td className="px-4 py-3">
+        <span className="rounded-full bg-gold-50 px-2 py-0.5 text-[10px] font-bold text-gold-700 border border-gold-200">
+          {p.kategori?.nama ?? "Layanan"}
+        </span>
+      </td>
+      <td className="px-4 py-3 text-stone-500">
+        {p.durasiMenit ? `⏱ ${p.durasiMenit} mnt` : `📦 Stok: ${p.stok}`}
+      </td>
+      <td className="px-4 py-3 text-right font-extrabold text-sage-900">{rupiah(p.harga)}</td>
+      <td className="px-4 py-3 text-center">
+        <button
+          type="button"
+          onClick={(e) => {
+            e.stopPropagation();
+            onAddToCart(p);
+          }}
+          className={`rounded-xl px-3 py-1.5 text-xs font-bold transition ${
+            inCart
+              ? "bg-sage-800 text-white shadow-sm"
+              : "border border-stone-200 bg-white text-stone-700 hover:bg-stone-100"
+          }`}
+        >
+          {inCart ? `(x${qtyInCart}) +` : "+ Tambah"}
+        </button>
+      </td>
+    </tr>
+  );
+});
+
+const CartItemRow = memo(function CartItemRow({
+  item,
+  karyawanList,
+  onUpdateQty,
+  onRemoveFromCart,
+  onUpdateItemTherapist,
+}: {
+  item: CartItem;
+  karyawanList: Karyawan[];
+  onUpdateQty: (produkId: string, delta: number) => void;
+  onRemoveFromCart: (produkId: string) => void;
+  onUpdateItemTherapist: (produkId: string, karyawanId: string) => void;
+}) {
+  return (
+    <div className="rounded-2xl border border-stone-200/90 bg-stone-50/80 p-3 text-xs space-y-2.5 transition hover:bg-stone-50">
+      <div className="flex items-start justify-between gap-2">
+        <div className="flex-1">
+          <p className="font-bold text-stone-900 text-xs">{item.produk.nama}</p>
+          <p className="text-[11px] text-stone-500 font-medium">{rupiah(item.produk.harga)} / item</p>
+        </div>
+
+        <div className="flex items-center gap-2">
+          <div className="flex items-center border border-stone-300 rounded-xl bg-white overflow-hidden shadow-sm">
+            <button
+              type="button"
+              onClick={() => onUpdateQty(item.produk.id, -1)}
+              className="px-2 py-1 font-bold text-stone-600 hover:bg-stone-100 transition"
+            >
+              <Minus size={12} />
+            </button>
+            <span className="px-2.5 font-extrabold text-stone-900 text-xs">{item.qty}</span>
+            <button
+              type="button"
+              onClick={() => onUpdateQty(item.produk.id, 1)}
+              className="px-2 py-1 font-bold text-stone-600 hover:bg-stone-100 transition"
+            >
+              <Plus size={12} />
+            </button>
+          </div>
+
+          <button
+            type="button"
+            onClick={() => onRemoveFromCart(item.produk.id)}
+            className="rounded-lg p-1 text-stone-400 hover:bg-rose-50 hover:text-rose-600 transition"
+            title="Hapus item"
+          >
+            <X size={15} />
+          </button>
+        </div>
+      </div>
+
+      <div className="flex items-center justify-between gap-2 pt-2 border-t border-stone-200/60">
+        <div className="flex items-center gap-1.5 flex-1">
+          <Scissors size={12} className="text-sage-700 shrink-0" />
+          <select
+            value={item.karyawanId}
+            onChange={(e) => onUpdateItemTherapist(item.produk.id, e.target.value)}
+            className="w-full rounded-xl border border-stone-200 bg-white px-2 py-1 text-[11px] font-medium text-stone-800 outline-none focus:border-sage-600"
+          >
+            <option value="">Terapis Bebas / No Pref</option>
+            {karyawanList.map((k) => (
+              <option key={k.id} value={k.id}>
+                {k.nama} ({k.jabatan})
+              </option>
+            ))}
+          </select>
+        </div>
+
+        <span className="font-extrabold text-sage-900 text-xs shrink-0">
+          {rupiah(item.produk.harga * item.qty)}
+        </span>
+      </div>
+    </div>
+  );
+});
+
 export default function KasirClient() {
   const router = useRouter();
+  const { toast } = useAlert();
+
   const [produkList, setProdukList] = useState<Produk[]>([]);
   const [karyawanList, setKaryawanList] = useState<Karyawan[]>([]);
   const [promoList, setPromoList] = useState<Promo[]>([]);
@@ -54,7 +261,6 @@ export default function KasirClient() {
   const [viewMode, setViewMode] = useState<"grid" | "table">("grid");
 
   // Cart State (Multi-Item Support)
-  type CartItem = { produk: Produk; karyawanId: string; qty: number };
   const [cart, setCart] = useState<CartItem[]>([]);
   const [selectedKaryawanGlobal, setSelectedKaryawanGlobal] = useState<string>("");
 
@@ -80,13 +286,13 @@ export default function KasirClient() {
   const [submitting, setSubmitting] = useState(false);
   const [err, setErr] = useState("");
 
-  // Search, Filter & Pagination
+  // Search & Filter State
   const [q, setQ] = useState("");
+  const deferredQ = useDeferredValue(q);
   const [activeKat, setActiveKat] = useState<string>("semua");
 
   // Load POS data
   const loadData = useCallback(async () => {
-    setLoading(true);
     try {
       const res = await fetch("/api/cms/kasir");
       if (res.ok) {
@@ -104,41 +310,52 @@ export default function KasirClient() {
   }, []);
 
   useEffect(() => {
-    let mounted = true;
+    let ignore = false;
     fetch("/api/cms/kasir")
       .then((r) => (r.ok ? r.json() : null))
       .then((j) => {
-        if (mounted && j) {
+        if (!ignore && j) {
           setProdukList(j.produk ?? []);
           setKaryawanList(j.karyawan ?? []);
           setPromoList(j.promo ?? []);
           setPelangganList(j.pelanggan ?? []);
           setLoading(false);
         }
+      })
+      .catch((e) => {
+        if (!ignore) {
+          console.error("Gagal load data POS:", e);
+          setLoading(false);
+        }
       });
+
     return () => {
-      mounted = false;
+      ignore = true;
     };
   }, []);
 
-  // Cart Helper Handlers
-  const addToCart = (p: Produk) => {
-    setCart((prev) => {
-      const idx = prev.findIndex((item) => item.produk.id === p.id);
-      if (idx >= 0) {
-        const updated = [...prev];
-        updated[idx] = { ...updated[idx], qty: updated[idx].qty + 1 };
-        return updated;
-      }
-      return [...prev, { produk: p, karyawanId: selectedKaryawanGlobal, qty: 1 }];
-    });
-  };
+  // Cart Helper Handlers (Memoized)
+  const addToCart = useCallback(
+    (p: Produk) => {
+      setCart((prev) => {
+        const idx = prev.findIndex((item) => item.produk.id === p.id);
+        if (idx >= 0) {
+          const updated = [...prev];
+          updated[idx] = { ...updated[idx], qty: updated[idx].qty + 1 };
+          return updated;
+        }
+        return [...prev, { produk: p, karyawanId: selectedKaryawanGlobal, qty: 1 }];
+      });
+      toast.success(`${p.nama} ditambahkan`, "Keranjang", 1500);
+    },
+    [selectedKaryawanGlobal, toast]
+  );
 
-  const removeFromCart = (produkId: string) => {
+  const removeFromCart = useCallback((produkId: string) => {
     setCart((prev) => prev.filter((item) => item.produk.id !== produkId));
-  };
+  }, []);
 
-  const updateQty = (produkId: string, delta: number) => {
+  const updateQty = useCallback((produkId: string, delta: number) => {
     setCart((prev) =>
       prev
         .map((item) => {
@@ -150,13 +367,20 @@ export default function KasirClient() {
         })
         .filter(Boolean) as CartItem[]
     );
-  };
+  }, []);
 
-  const updateItemTherapist = (produkId: string, karyawanId: string) => {
+  const updateItemTherapist = useCallback((produkId: string, karyawanId: string) => {
     setCart((prev) =>
       prev.map((item) => (item.produk.id === produkId ? { ...item, karyawanId } : item))
     );
-  };
+  }, []);
+
+  // Fast Cart Lookup Map
+  const cartMap = useMemo(() => {
+    const map = new Map<string, number>();
+    cart.forEach((item) => map.set(item.produk.id, item.qty));
+    return map;
+  }, [cart]);
 
   // Filter Categories
   const categories = useMemo(() => {
@@ -167,14 +391,19 @@ export default function KasirClient() {
     return Array.from(set);
   }, [produkList]);
 
-  // Filtered Products
+  // Non-blocking Filtered Products via useDeferredValue
   const filteredProducts = useMemo(() => {
+    const query = deferredQ.toLowerCase().trim();
+    if (!query && activeKat === "semua") return produkList;
     return produkList.filter((p) => {
-      const matchQ = p.nama.toLowerCase().includes(q.toLowerCase()) || p.kategori?.nama.toLowerCase().includes(q.toLowerCase());
+      const matchQ =
+        !query ||
+        p.nama.toLowerCase().includes(query) ||
+        (p.kategori?.nama && p.kategori.nama.toLowerCase().includes(query));
       const matchKat = activeKat === "semua" || p.kategori?.nama === activeKat;
       return matchQ && matchKat;
     });
-  }, [produkList, q, activeKat]);
+  }, [produkList, deferredQ, activeKat]);
 
   // Customer Loyalty Points Lookup
   const foundPelanggan = useMemo(() => {
@@ -296,14 +525,19 @@ export default function KasirClient() {
       setSubmitting(false);
 
       if (res.ok && j.bookingId) {
+        toast.success("Transaksi kasir berhasil!", "Berhasil");
         router.push(`/cms/struk/${j.bookingId}`);
       } else {
-        setErr(j.error ?? "Gagal memproses transaksi kasir");
+        const errorMsg = j.error ?? "Gagal memproses transaksi kasir";
+        setErr(errorMsg);
+        toast.error(errorMsg);
       }
     } catch (err) {
       setSubmitting(false);
       console.error(err);
-      setErr("Terjadi kesalahan koneksi kasir");
+      const connErr = "Terjadi kesalahan koneksi kasir";
+      setErr(connErr);
+      toast.error(connErr);
     }
   };
 
@@ -311,7 +545,7 @@ export default function KasirClient() {
     return (
       <div className="flex h-96 flex-col items-center justify-center gap-3">
         <RefreshCw size={28} className="animate-spin text-sage-600" />
-        <p className="text-sm font-semibold text-stone-600">Memuat Sistem Kasir POS &amp; Katalog Salon...</p>
+        <p className="text-sm font-semibold text-stone-600">Memuat Kasir POS &amp; Katalog Salon...</p>
       </div>
     );
   }
@@ -320,7 +554,7 @@ export default function KasirClient() {
 
   return (
     <div className="space-y-5">
-      {/* Top POS Control Bar & Visual Metrics */}
+      {/* Top POS Control Bar */}
       <div className="flex flex-wrap items-center justify-between gap-4 rounded-3xl border border-stone-200/80 bg-white p-5 shadow-sm">
         <div>
           <div className="flex items-center gap-2">
@@ -333,12 +567,12 @@ export default function KasirClient() {
             </span>
           </div>
           <p className="mt-1 text-xs text-stone-500">
-            Katalog perawatan &amp; produk fisik interaktif. Mendukung multi-item cart, terapis dedicated, &amp; split payment.
+            Katalog perawatan &amp; produk fisik interaktif. Performa cepat 60FPS.
           </p>
         </div>
 
         <div className="flex flex-wrap items-center gap-3">
-          {/* Quick Global Therapist Selector */}
+          {/* Global Therapist Selector */}
           <div className="flex items-center gap-2 rounded-2xl border border-stone-200 bg-stone-50/70 px-3 py-1.5 text-xs">
             <Scissors size={14} className="text-sage-700 shrink-0" />
             <span className="font-medium text-stone-500 hidden sm:inline">Terapis Default:</span>
@@ -359,20 +593,20 @@ export default function KasirClient() {
           <button
             type="button"
             onClick={loadData}
-            className="flex items-center gap-1.5 rounded-2xl border border-stone-200 bg-white px-3.5 py-2 text-xs font-semibold text-stone-600 transition hover:bg-stone-50 hover:text-stone-900"
+            className="flex items-center gap-1.5 rounded-2xl border border-stone-200 bg-white px-3.5 py-2 text-xs font-semibold text-stone-600 transition hover:bg-stone-50 hover:text-stone-900 cursor-pointer"
           >
             <RefreshCw size={14} /> Refresh
           </button>
         </div>
       </div>
 
-      {/* Main Layout Grid (2 Columns: Left Catalog 7 cols, Right Cart Drawer 5 cols) */}
+      {/* Main Layout Grid */}
       <div className="grid grid-cols-1 gap-6 lg:grid-cols-12">
         
-        {/* LEFT COLUMN: Catalog Filter, Search & Product Grid/List (7 Cols) */}
+        {/* LEFT COLUMN: Catalog Filter & Product Grid (7 Cols) */}
         <div className="space-y-4 lg:col-span-7">
           
-          {/* Search, Category Filter Chips & View Mode Switcher */}
+          {/* Search, Category Filter Chips & View Switcher */}
           <div className="rounded-3xl border border-stone-200/80 bg-white p-4 shadow-sm space-y-3">
             <div className="flex items-center gap-2">
               <div className="relative flex-1">
@@ -388,7 +622,7 @@ export default function KasirClient() {
                   <button
                     type="button"
                     onClick={() => setQ("")}
-                    className="absolute right-3 top-3 text-stone-400 hover:text-stone-700"
+                    className="absolute right-3 top-3 text-stone-400 hover:text-stone-700 cursor-pointer"
                   >
                     <X size={14} />
                   </button>
@@ -400,7 +634,7 @@ export default function KasirClient() {
                 <button
                   type="button"
                   onClick={() => setViewMode("grid")}
-                  className={`rounded-xl p-2 transition ${
+                  className={`rounded-xl p-2 transition cursor-pointer ${
                     viewMode === "grid" ? "bg-white text-sage-900 shadow-sm font-bold" : "text-stone-400 hover:text-stone-700"
                   }`}
                   title="Tampilan Kartu (Grid)"
@@ -410,7 +644,7 @@ export default function KasirClient() {
                 <button
                   type="button"
                   onClick={() => setViewMode("table")}
-                  className={`rounded-xl p-2 transition ${
+                  className={`rounded-xl p-2 transition cursor-pointer ${
                     viewMode === "table" ? "bg-white text-sage-900 shadow-sm font-bold" : "text-stone-400 hover:text-stone-700"
                   }`}
                   title="Tampilan Tabel (List)"
@@ -425,7 +659,7 @@ export default function KasirClient() {
               <button
                 type="button"
                 onClick={() => setActiveKat("semua")}
-                className={`rounded-xl px-3.5 py-1.5 text-xs font-bold transition ${
+                className={`rounded-xl px-3.5 py-1.5 text-xs font-bold transition cursor-pointer ${
                   activeKat === "semua"
                     ? "bg-sage-900 text-white shadow-md"
                     : "bg-stone-100 text-stone-600 hover:bg-stone-200"
@@ -438,7 +672,7 @@ export default function KasirClient() {
                   key={cat}
                   type="button"
                   onClick={() => setActiveKat(cat)}
-                  className={`rounded-xl px-3.5 py-1.5 text-xs font-bold transition ${
+                  className={`rounded-xl px-3.5 py-1.5 text-xs font-bold transition cursor-pointer ${
                     activeKat === cat
                       ? "bg-sage-900 text-white shadow-md"
                       : "bg-stone-100 text-stone-600 hover:bg-stone-200"
@@ -454,72 +688,15 @@ export default function KasirClient() {
           {viewMode === "grid" && (
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
               {filteredProducts.map((p) => {
-                const cartItem = cart.find((item) => item.produk.id === p.id);
-                const inCart = !!cartItem;
-                const qtyInCart = cartItem?.qty || 0;
-
+                const qtyInCart = cartMap.get(p.id) || 0;
                 return (
-                  <div
+                  <ProductGridCard
                     key={p.id}
-                    onClick={() => addToCart(p)}
-                    className={`group relative flex flex-col justify-between rounded-3xl border p-4 transition-all cursor-pointer ${
-                      inCart
-                        ? "border-sage-600 bg-sage-50/60 shadow-md ring-2 ring-sage-600/20"
-                        : "border-stone-200/80 bg-white hover:border-sage-400 hover:shadow-md"
-                    }`}
-                  >
-                    <div>
-                      {/* Top Badges */}
-                      <div className="flex items-center justify-between gap-2 mb-2">
-                        <span className="rounded-full bg-gold-100 px-2.5 py-0.5 text-[10px] font-bold text-gold-700 border border-gold-200">
-                          {p.kategori?.nama || "Umum"}
-                        </span>
-                        <span className="text-[11px] font-semibold text-stone-500">
-                          {p.durasiMenit ? `⏱ ${p.durasiMenit} Mnt` : `📦 Stok: ${p.stok}`}
-                        </span>
-                      </div>
-
-                      {/* Product Name */}
-                      <h3 className="font-semibold text-stone-900 text-sm group-hover:text-sage-800 transition line-clamp-2">
-                        {p.nama}
-                      </h3>
-                    </div>
-
-                    {/* Bottom Price & Action Button */}
-                    <div className="mt-4 flex items-end justify-between border-t border-stone-100 pt-3">
-                      <div>
-                        <span className="text-[10px] uppercase font-bold text-stone-400 block">Harga</span>
-                        <span className="font-serif-display text-base font-bold text-sage-900">
-                          {rupiah(p.harga)}
-                        </span>
-                      </div>
-
-                      <button
-                        type="button"
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          addToCart(p);
-                        }}
-                        className={`flex items-center gap-1.5 rounded-xl px-3 py-1.5 text-xs font-bold transition ${
-                          inCart
-                            ? "bg-sage-900 text-white shadow-sm hover:bg-sage-800"
-                            : "bg-stone-100 text-stone-700 group-hover:bg-sage-700 group-hover:text-white"
-                        }`}
-                      >
-                        {inCart ? (
-                          <>
-                            <CheckCircle size={14} className="text-gold-400" />
-                            <span>(x{qtyInCart}) + Tambah</span>
-                          </>
-                        ) : (
-                          <>
-                            <Plus size={14} />
-                            <span>Tambah</span>
-                          </>
-                        )}
-                      </button>
-                    </div>
-                  </div>
+                    p={p}
+                    inCart={qtyInCart > 0}
+                    qtyInCart={qtyInCart}
+                    onAddToCart={addToCart}
+                  />
                 );
               })}
             </div>
@@ -540,48 +717,15 @@ export default function KasirClient() {
                 </thead>
                 <tbody className="divide-y divide-stone-100">
                   {filteredProducts.map((p) => {
-                    const cartItem = cart.find((item) => item.produk.id === p.id);
-                    const inCart = !!cartItem;
+                    const qtyInCart = cartMap.get(p.id) || 0;
                     return (
-                      <tr
+                      <ProductTableRow
                         key={p.id}
-                        onClick={() => addToCart(p)}
-                        className={`cursor-pointer transition ${
-                          inCart ? "bg-sage-50/90 font-medium text-sage-950" : "hover:bg-stone-50 text-stone-800"
-                        }`}
-                      >
-                        <td className="px-4 py-3 font-bold text-stone-900">
-                          <div className="flex items-center gap-2">
-                            {inCart && <Check size={14} className="text-sage-700 font-bold shrink-0" />}
-                            <span>{p.nama}</span>
-                          </div>
-                        </td>
-                        <td className="px-4 py-3">
-                          <span className="rounded-full bg-gold-50 px-2 py-0.5 text-[10px] font-bold text-gold-700 border border-gold-200">
-                            {p.kategori?.nama ?? "Layanan"}
-                          </span>
-                        </td>
-                        <td className="px-4 py-3 text-stone-500">
-                          {p.durasiMenit ? `⏱ ${p.durasiMenit} mnt` : `📦 Stok: ${p.stok}`}
-                        </td>
-                        <td className="px-4 py-3 text-right font-extrabold text-sage-900">{rupiah(p.harga)}</td>
-                        <td className="px-4 py-3 text-center">
-                          <button
-                            type="button"
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              addToCart(p);
-                            }}
-                            className={`rounded-xl px-3 py-1.5 text-xs font-bold transition ${
-                              inCart
-                                ? "bg-sage-800 text-white shadow-sm"
-                                : "border border-stone-200 bg-white text-stone-700 hover:bg-stone-100"
-                            }`}
-                          >
-                            {inCart ? `(x${cartItem.qty}) +` : "+ Tambah"}
-                          </button>
-                        </td>
-                      </tr>
+                        p={p}
+                        inCart={qtyInCart > 0}
+                        qtyInCart={qtyInCart}
+                        onAddToCart={addToCart}
+                      />
                     );
                   })}
                 </tbody>
@@ -618,7 +762,7 @@ export default function KasirClient() {
                 <button
                   type="button"
                   onClick={() => setCart([])}
-                  className="flex items-center gap-1 text-[11px] font-semibold text-rose-600 hover:text-rose-800 transition"
+                  className="flex items-center gap-1 text-[11px] font-semibold text-rose-600 hover:text-rose-800 transition cursor-pointer"
                   title="Kosongkan Keranjang"
                 >
                   <Trash2 size={13} /> Reset
@@ -636,70 +780,14 @@ export default function KasirClient() {
             {cart.length > 0 ? (
               <div className="space-y-3 max-h-64 overflow-y-auto pr-1">
                 {cart.map((item) => (
-                  <div
+                  <CartItemRow
                     key={item.produk.id}
-                    className="rounded-2xl border border-stone-200/90 bg-stone-50/80 p-3 text-xs space-y-2.5 transition hover:bg-stone-50"
-                  >
-                    <div className="flex items-start justify-between gap-2">
-                      <div className="flex-1">
-                        <p className="font-bold text-stone-900 text-xs">{item.produk.nama}</p>
-                        <p className="text-[11px] text-stone-500 font-medium">{rupiah(item.produk.harga)} / item</p>
-                      </div>
-
-                      <div className="flex items-center gap-2">
-                        {/* Quantity Stepper */}
-                        <div className="flex items-center border border-stone-300 rounded-xl bg-white overflow-hidden shadow-sm">
-                          <button
-                            type="button"
-                            onClick={() => updateQty(item.produk.id, -1)}
-                            className="px-2 py-1 font-bold text-stone-600 hover:bg-stone-100 transition"
-                          >
-                            <Minus size={12} />
-                          </button>
-                          <span className="px-2.5 font-extrabold text-stone-900 text-xs">{item.qty}</span>
-                          <button
-                            type="button"
-                            onClick={() => updateQty(item.produk.id, 1)}
-                            className="px-2 py-1 font-bold text-stone-600 hover:bg-stone-100 transition"
-                          >
-                            <Plus size={12} />
-                          </button>
-                        </div>
-
-                        <button
-                          type="button"
-                          onClick={() => removeFromCart(item.produk.id)}
-                          className="rounded-lg p-1 text-stone-400 hover:bg-rose-50 hover:text-rose-600 transition"
-                          title="Hapus item"
-                        >
-                          <X size={15} />
-                        </button>
-                      </div>
-                    </div>
-
-                    {/* Therapist Select & Line Total */}
-                    <div className="flex items-center justify-between gap-2 pt-2 border-t border-stone-200/60">
-                      <div className="flex items-center gap-1.5 flex-1">
-                        <Scissors size={12} className="text-sage-700 shrink-0" />
-                        <select
-                          value={item.karyawanId}
-                          onChange={(e) => updateItemTherapist(item.produk.id, e.target.value)}
-                          className="w-full rounded-xl border border-stone-200 bg-white px-2 py-1 text-[11px] font-medium text-stone-800 outline-none focus:border-sage-600"
-                        >
-                          <option value="">Terapis Bebas / No Pref</option>
-                          {karyawanList.map((k) => (
-                            <option key={k.id} value={k.id}>
-                              {k.nama} ({k.jabatan})
-                            </option>
-                          ))}
-                        </select>
-                      </div>
-
-                      <span className="font-extrabold text-sage-900 text-xs shrink-0">
-                        {rupiah(item.produk.harga * item.qty)}
-                      </span>
-                    </div>
-                  </div>
+                    item={item}
+                    karyawanList={karyawanList}
+                    onUpdateQty={updateQty}
+                    onRemoveFromCart={removeFromCart}
+                    onUpdateItemTherapist={updateItemTherapist}
+                  />
                 ))}
               </div>
             ) : (
@@ -719,7 +807,7 @@ export default function KasirClient() {
                 <button
                   type="button"
                   onClick={fillWalkInCustomer}
-                  className="text-[10px] font-bold text-sage-700 hover:text-sage-900 bg-sage-50 px-2 py-0.5 rounded-lg border border-sage-200"
+                  className="text-[10px] font-bold text-sage-700 hover:text-sage-900 bg-sage-50 px-2 py-0.5 rounded-lg border border-sage-200 cursor-pointer"
                 >
                   + Quick Walk-in
                 </button>
@@ -769,7 +857,7 @@ export default function KasirClient() {
                             setPakaiPoinInput(String(foundPelanggan.poin));
                           }
                         }}
-                        className="rounded border-gold-400 text-gold-600 focus:ring-gold-500"
+                        className="rounded border-gold-400 text-gold-600 focus:ring-gold-500 cursor-pointer"
                       />
                       <span>Tukarkan Poin untuk Potongan Harga</span>
                     </label>
@@ -807,7 +895,7 @@ export default function KasirClient() {
                 <button
                   type="button"
                   onClick={() => setPaymentMode("SINGLE")}
-                  className={`rounded-xl py-2 text-[11px] font-bold transition ${
+                  className={`rounded-xl py-2 text-[11px] font-bold transition cursor-pointer ${
                     paymentMode === "SINGLE"
                       ? "bg-white text-sage-900 shadow-sm"
                       : "text-stone-500 hover:text-stone-800"
@@ -823,7 +911,7 @@ export default function KasirClient() {
                       setSplitJumlah1(String(Math.round(totalBayar / 2)));
                     }
                   }}
-                  className={`rounded-xl py-2 text-[11px] font-bold transition ${
+                  className={`rounded-xl py-2 text-[11px] font-bold transition cursor-pointer ${
                     paymentMode === "SPLIT"
                       ? "bg-white text-sage-900 shadow-sm"
                       : "text-stone-500 hover:text-stone-800"
@@ -834,7 +922,7 @@ export default function KasirClient() {
                 <button
                   type="button"
                   onClick={() => setPaymentMode("DP")}
-                  className={`rounded-xl py-2 text-[11px] font-bold transition ${
+                  className={`rounded-xl py-2 text-[11px] font-bold transition cursor-pointer ${
                     paymentMode === "DP"
                       ? "bg-white text-sage-900 shadow-sm"
                       : "text-stone-500 hover:text-stone-800"
@@ -852,7 +940,7 @@ export default function KasirClient() {
                       key={method}
                       type="button"
                       onClick={() => setMetodeBayar(method)}
-                      className={`rounded-xl py-2 text-xs font-bold border transition ${
+                      className={`rounded-xl py-2 text-xs font-bold border transition cursor-pointer ${
                         metodeBayar === method
                           ? "border-sage-700 bg-sage-800 text-white shadow-md"
                           : "border-stone-200 bg-stone-50 text-stone-700 hover:bg-stone-100"
@@ -878,14 +966,14 @@ export default function KasirClient() {
                     <button
                       type="button"
                       onClick={() => setSplitJumlah1(String(Math.round(totalBayar / 2)))}
-                      className="rounded-lg bg-white px-2 py-0.5 text-[10px] font-bold text-sage-800 border border-sage-200 hover:bg-sage-100 transition"
+                      className="rounded-lg bg-white px-2 py-0.5 text-[10px] font-bold text-sage-800 border border-sage-200 hover:bg-sage-100 transition cursor-pointer"
                     >
                       50% - 50%
                     </button>
                     <button
                       type="button"
                       onClick={() => setSplitJumlah1(String(Math.round((totalBayar * 70) / 100)))}
-                      className="rounded-lg bg-white px-2 py-0.5 text-[10px] font-bold text-sage-800 border border-sage-200 hover:bg-sage-100 transition"
+                      className="rounded-lg bg-white px-2 py-0.5 text-[10px] font-bold text-sage-800 border border-sage-200 hover:bg-sage-100 transition cursor-pointer"
                     >
                       70% - 30%
                     </button>
@@ -896,7 +984,7 @@ export default function KasirClient() {
                     <select
                       value={splitMetode1}
                       onChange={(e) => setSplitMetode1(e.target.value as "TUNAI" | "TRANSFER" | "QRIS" | "DEBIT")}
-                      className="rounded-xl border border-stone-300 bg-white px-2 py-1.5 font-bold text-stone-800 outline-none text-xs"
+                      className="rounded-xl border border-stone-300 bg-white px-2 py-1.5 font-bold text-stone-800 outline-none text-xs cursor-pointer"
                     >
                       <option value="TUNAI">TUNAI</option>
                       <option value="TRANSFER">TRANSFER</option>
@@ -912,12 +1000,12 @@ export default function KasirClient() {
                     />
                   </div>
 
-                  {/* Split 2 (Auto computed) */}
+                  {/* Split 2 */}
                   <div className="flex items-center gap-2">
                     <select
                       value={splitMetode2}
                       onChange={(e) => setSplitMetode2(e.target.value as "TUNAI" | "TRANSFER" | "QRIS" | "DEBIT")}
-                      className="rounded-xl border border-stone-300 bg-white px-2 py-1.5 font-bold text-stone-800 outline-none text-xs"
+                      className="rounded-xl border border-stone-300 bg-white px-2 py-1.5 font-bold text-stone-800 outline-none text-xs cursor-pointer"
                     >
                       <option value="QRIS">QRIS</option>
                       <option value="TRANSFER">TRANSFER</option>
@@ -944,7 +1032,7 @@ export default function KasirClient() {
                         key={method}
                         type="button"
                         onClick={() => setMetodeBayar(method)}
-                        className={`rounded-xl py-1.5 text-[11px] font-bold border transition ${
+                        className={`rounded-xl py-1.5 text-[11px] font-bold border transition cursor-pointer ${
                           metodeBayar === method
                             ? "border-amber-600 bg-amber-700 text-white shadow-sm"
                             : "border-stone-200 bg-white text-stone-700 hover:bg-stone-100"
@@ -1034,7 +1122,7 @@ export default function KasirClient() {
             <button
               type="submit"
               disabled={submitting || cart.length === 0}
-              className="group flex w-full items-center justify-center gap-2 rounded-2xl bg-sage-900 py-3.5 text-xs font-bold text-white shadow-xl transition hover:bg-sage-800 active:scale-[0.99] disabled:opacity-50"
+              className="group flex w-full items-center justify-center gap-2 rounded-2xl bg-sage-900 py-3.5 text-xs font-bold text-white shadow-xl transition hover:bg-sage-800 active:scale-[0.99] disabled:opacity-50 cursor-pointer"
             >
               {submitting ? (
                 <span className="h-4 w-4 animate-spin rounded-full border-2 border-white border-t-transparent" />
