@@ -1,7 +1,7 @@
 "use client";
 import { useEffect, useMemo, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Input, Label, Btn } from "@/components/ui";
+import { Input, Label, Btn, useAlert } from "@/components/ui";
 import { rupiah } from "@/lib/utils";
 import { WA_ADMIN, waLink, pesanBookingBaru } from "@/lib/wa";
 import { Check, ChevronLeft, ChevronRight, CalendarHeart, Sparkles, UserRound, TicketPercent, Landmark, Copy, UploadCloud, X, Clock, UserCheck } from "lucide-react";
@@ -24,6 +24,7 @@ export default function BookingForm({
   karyawan?: K[];
   preselected?: string;
 }) {
+  const { alert } = useAlert();
   const [step, setStep] = useState(0);
 
   const todayStr = useMemo(() => {
@@ -96,15 +97,29 @@ export default function BookingForm({
     setCekLoading(true);
     setPromoErr("");
     setPromo(null);
-    const res = await fetch("/api/promo", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ kode: form.kodePromo, produkId: form.produkId }),
-    });
-    const j = await res.json();
-    setCekLoading(false);
-    if (j.ok) setPromo({ diskon: j.diskon, total: j.total, nama: j.promo.nama });
-    else setPromoErr(j.error ?? "Kode tidak valid");
+    try {
+      const res = await fetch("/api/promo", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ kode: form.kodePromo, produkId: form.produkId }),
+      });
+      const j = await res.json();
+      setCekLoading(false);
+      if (j.ok) {
+        setPromo({ diskon: j.diskon, total: j.total, nama: j.promo.nama });
+      } else {
+        const errMsg = j.error ?? "Kode tidak valid";
+        setPromoErr(errMsg);
+        await alert(
+          `Kode promo "${form.kodePromo}" tidak valid (${errMsg}). Booking Anda tetap dapat dilanjutkan dengan harga normal.`,
+          "Notifikasi Kode Promo",
+          "warning"
+        );
+      }
+    } catch {
+      setCekLoading(false);
+      setPromoErr("Gagal mengecek promo");
+    }
   }
 
   async function uploadBukti(e: React.ChangeEvent<HTMLInputElement>) {
@@ -132,20 +147,28 @@ export default function BookingForm({
     setLoading(true);
     setMsg("");
     setWaUrl("");
-    const res = await fetch("/api/booking", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ ...form, jadwal: fullJadwal, karyawanId: selectedKaryawan }),
-    });
-    const j = await res.json();
-    setLoading(false);
-    if (res.ok) {
-      const jadwalTxt = `${new Date(j.jadwal).toLocaleDateString("id-ID", { timeZone: "Asia/Jakarta", weekday: "long", day: "numeric", month: "long" })} jam ${new Date(j.jadwal).toLocaleTimeString("id-ID", { timeZone: "Asia/Jakarta", hour: "2-digit", minute: "2-digit" })}`;
-      const terapisTxt = selectedTerapisObj ? ` dengan terapis ${selectedTerapisObj.nama}` : "";
-      setMsg(`Booking ${j.layanan}${terapisTxt} untuk ${jadwalTxt} diterima.${j.diskon ? ` Hemat ${rupiah(j.diskon)} (total ${rupiah(j.total)}).` : ""}`);
-      setWaUrl(waLink(WA_ADMIN, pesanBookingBaru(j.nama, `${j.layanan}${terapisTxt}`, jadwalTxt, j.buktiTF)));
-      setStep(3);
-    } else setMsg("✕ " + (j.error ?? "Gagal"));
+    try {
+      const res = await fetch("/api/booking", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ ...form, jadwal: fullJadwal, karyawanId: selectedKaryawan }),
+      });
+      const j = await res.json();
+      setLoading(false);
+      if (res.ok) {
+        if (j.promoNote) {
+          await alert(j.promoNote, "Notifikasi Promo", "warning");
+        }
+        const jadwalTxt = `${new Date(j.jadwal).toLocaleDateString("id-ID", { timeZone: "Asia/Jakarta", weekday: "long", day: "numeric", month: "long" })} jam ${new Date(j.jadwal).toLocaleTimeString("id-ID", { timeZone: "Asia/Jakarta", hour: "2-digit", minute: "2-digit" })}`;
+        const terapisTxt = selectedTerapisObj ? ` dengan terapis ${selectedTerapisObj.nama}` : "";
+        setMsg(`Booking ${j.layanan}${terapisTxt} untuk ${jadwalTxt} diterima.${j.diskon ? ` Hemat ${rupiah(j.diskon)} (total ${rupiah(j.total)}).` : ""}`);
+        setWaUrl(waLink(WA_ADMIN, pesanBookingBaru(j.nama, `${j.layanan}${terapisTxt}`, jadwalTxt, j.buktiTF)));
+        setStep(3);
+      } else setMsg("✕ " + (j.error ?? "Gagal"));
+    } catch {
+      setLoading(false);
+      setMsg("✕ Gagal mengirimkan booking");
+    }
   }
 
   return (

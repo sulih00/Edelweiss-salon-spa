@@ -49,19 +49,27 @@ export async function POST(req: Request) {
       );
     }
 
-    // Validasi promo (opsional)
+    // Validasi promo (opsional) - Jika salah/tidak valid, booking tetap bisa disubmit (diskon = 0) & berikan catatan alert
     let promoId: string | null = null;
     let diskon = 0;
     let kodePromo: string | null = null;
+    let promoNote: string | null = null;
     if (body.kodePromo?.trim()) {
-      const promo = await prisma.promo.findUnique({ where: { kode: body.kodePromo.trim().toUpperCase() } });
-      if (!promo) return NextResponse.json({ error: "Kode promo tidak ditemukan" }, { status: 400 });
-      const cek = cekPromo(promo, produk.harga);
-      if (!cek.ok) return NextResponse.json({ error: cek.error }, { status: 400 });
-      promoId = promo.id;
-      diskon = cek.diskon ?? 0;
-      kodePromo = promo.kode;
-      await prisma.promo.update({ where: { id: promo.id }, data: { terpakai: { increment: 1 } } });
+      const inputKode = body.kodePromo.trim().toUpperCase();
+      const promo = await prisma.promo.findUnique({ where: { kode: inputKode } });
+      if (!promo) {
+        promoNote = `Kode promo "${body.kodePromo.trim()}" tidak ditemukan. Booking Anda tetap diproses dengan harga normal.`;
+      } else {
+        const cek = cekPromo(promo, produk.harga);
+        if (!cek.ok) {
+          promoNote = `Kode promo "${body.kodePromo.trim()}" ${cek.error?.toLowerCase() ?? "tidak berlaku"}. Booking Anda tetap diproses dengan harga normal.`;
+        } else {
+          promoId = promo.id;
+          diskon = cek.diskon ?? 0;
+          kodePromo = promo.kode;
+          await prisma.promo.update({ where: { id: promo.id }, data: { terpakai: { increment: 1 } } });
+        }
+      }
     }
 
     const karyawanId = body.karyawanId && body.karyawanId !== "bebas" ? body.karyawanId : null;
@@ -148,6 +156,7 @@ export async function POST(req: Request) {
       diskon,
       total: produk.harga - diskon,
       buktiTF: body.buktiTF?.trim() || null,
+      promoNote,
     });
   } catch (e) {
     if (isDbDown(e))
