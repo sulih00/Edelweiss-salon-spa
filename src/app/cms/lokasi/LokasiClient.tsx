@@ -13,6 +13,7 @@ import {
   LocateFixed,
   RefreshCw,
 } from "lucide-react";
+import { useAlert } from "@/components/ui";
 
 export type LokasiItem = {
   id: string;
@@ -27,6 +28,7 @@ export type LokasiItem = {
 };
 
 export default function LokasiClient() {
+  const { alert, confirm, toast } = useAlert();
   const [list, setList] = useState<LokasiItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -94,9 +96,9 @@ export default function LokasiClient() {
     setModalOpen(true);
   }
 
-  function handleGetGPS() {
+  async function handleGetGPS() {
     if (!navigator.geolocation) {
-      alert("Browser Anda tidak mendukung Geolocation GPS");
+      await alert("Browser Anda tidak mendukung Geolocation GPS", "GPS Tidak Didukung", "warning");
       return;
     }
     setGeoLoading(true);
@@ -105,10 +107,11 @@ export default function LokasiClient() {
         setLatInput(pos.coords.latitude.toFixed(6));
         setLonInput(pos.coords.longitude.toFixed(6));
         setGeoLoading(false);
+        toast.success("Lokasi GPS berhasil diambil!", "GPS Berhasil");
       },
-      (error) => {
+      async (error) => {
         setGeoLoading(false);
-        alert("Gagal mendapatkan lokasi GPS: " + error.message);
+        await alert("Gagal mendapatkan lokasi GPS: " + error.message, "Gagal GPS", "error");
       },
       { enableHighAccuracy: true, timeout: 10000 }
     );
@@ -188,17 +191,21 @@ export default function LokasiClient() {
   }
 
   async function handleDelete(item: LokasiItem) {
-    if (!confirm(`Apakah Anda yakin ingin menghapus lokasi "${item.nama}"?`)) return;
+    const isOk = await confirm(`Apakah Anda yakin ingin menghapus lokasi "${item.nama}"?`, "Hapus Lokasi");
+    if (!isOk) return;
 
     try {
       const res = await fetch(`/api/cms/lokasi?id=${item.id}`, { method: "DELETE" });
       const json = await res.json();
       if (!res.ok) throw new Error(json.error || "Gagal menghapus lokasi");
 
+      toast.success("Lokasi berhasil dihapus.");
       setSuccessMessage("Lokasi berhasil dihapus.");
       loadData();
     } catch (err: unknown) {
-      setErrMessage(err instanceof Error ? err.message : "Gagal menghapus lokasi");
+      const msg = err instanceof Error ? err.message : "Gagal menghapus lokasi";
+      setErrMessage(msg);
+      toast.error(msg);
     }
   }
 

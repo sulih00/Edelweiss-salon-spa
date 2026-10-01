@@ -1,6 +1,6 @@
 "use client";
 import { useEffect, useState, useCallback } from "react";
-import { Input, Label, Btn } from "@/components/ui";
+import { Input, Label, Btn, useAlert } from "@/components/ui";
 import { Modal, PageHeader, AddButton, TableShell, Th, Td, RowBtn, Empty, Switch, FilterTabs } from "@/components/admin";
 import { labelPromo } from "@/lib/promo";
 
@@ -13,6 +13,7 @@ type P = {
 const empty = { kode: "", nama: "", deskripsi: "", tipe: "PERSEN", nilai: "10", minBelanja: "0", maxDiskon: "", kuota: "", mulai: "", berakhir: "" };
 
 export default function PromoClient() {
+  const { confirm, toast } = useAlert();
   const [data, setData] = useState<P[]>([]);
   const [form, setForm] = useState(empty);
   const [err, setErr] = useState("");
@@ -57,8 +58,10 @@ export default function PromoClient() {
   }
 
   async function hapus(id: string) {
-    if (!confirm("Hapus promo ini?")) return;
+    const isOk = await confirm("Apakah Anda yakin ingin menghapus promo ini?", "Hapus Promo");
+    if (!isOk) return;
     await fetch(`/api/cms/promo?id=${id}`, { method: "DELETE" });
+    toast.success("Promo berhasil dihapus.");
     load();
   }
 

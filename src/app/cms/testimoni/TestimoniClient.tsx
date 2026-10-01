@@ -1,6 +1,6 @@
 "use client";
 import { useEffect, useState, useCallback } from "react";
-import { Input, Label, Btn } from "@/components/ui";
+import { Input, Label, Btn, useAlert } from "@/components/ui";
 import { Modal, PageHeader, AddButton, TableShell, Th, Td, RowBtn, Empty, Switch, FilterTabs } from "@/components/admin";
 import { Star } from "lucide-react";
 
@@ -9,6 +9,7 @@ type T = { id: string; nama: string; isi: string; rating: number; tampil: boolea
 const empty = { nama: "", isi: "", rating: "5" };
 
 export default function TestimoniClient() {
+  const { confirm, toast } = useAlert();
   const [data, setData] = useState<T[]>([]);
   const [form, setForm] = useState(empty);
   const [err, setErr] = useState("");
@@ -50,8 +51,10 @@ export default function TestimoniClient() {
   }
 
   async function hapus(id: string) {
-    if (!confirm("Hapus testimoni ini?")) return;
+    const isOk = await confirm("Hapus testimoni ini?", "Hapus Testimoni");
+    if (!isOk) return;
     await fetch(`/api/cms/testimoni?id=${id}`, { method: "DELETE" });
+    toast.success("Testimoni berhasil dihapus.");
     load();
   }
 

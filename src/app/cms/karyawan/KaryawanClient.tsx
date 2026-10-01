@@ -1,6 +1,6 @@
 "use client";
 import { useEffect, useState, useCallback } from "react";
-import { Input, Label, Btn } from "@/components/ui";
+import { Input, Label, Btn, useAlert } from "@/components/ui";
 import { Modal, PageHeader, AddButton, TableShell, Th, Td, Badge, Empty, Stat } from "@/components/admin";
 import { rupiah } from "@/lib/utils";
 import { Award, DollarSign, CalendarCheck } from "lucide-react";
@@ -24,6 +24,7 @@ function getBulanIni() {
 }
 
 export default function KaryawanClient() {
+  const { alert, toast } = useAlert();
   const [data, setData] = useState<K[]>([]);
   const [form, setForm] = useState(empty);
   const [modal, setModal] = useState(false);
@@ -73,9 +74,10 @@ export default function KaryawanClient() {
       body: JSON.stringify({ ...form, komisiPersen: Number(form.komisiPersen) }),
     });
     if (!r.ok) {
-      alert("Gagal: Hanya OWNER/ADMIN yang diizinkan");
+      await alert("Gagal: Hanya OWNER/ADMIN yang diizinkan untuk menambah karyawan", "Akses Ditolak", "error");
       return;
     }
+    toast.success("Karyawan baru berhasil ditambahkan!");
     setForm(empty);
     setModal(false);
     loadData();

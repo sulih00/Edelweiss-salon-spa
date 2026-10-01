@@ -1,6 +1,6 @@
 "use client";
 import { useEffect, useState, useCallback, useMemo } from "react";
-import { Input, Label, Btn } from "@/components/ui";
+import { Input, Label, Btn, useAlert } from "@/components/ui";
 import { Modal, PageHeader, AddButton, TableShell, Th, Td, Badge, RowBtn, Empty, Switch, FilterTabs, Pagination } from "@/components/admin";
 import { rupiah } from "@/lib/utils";
 import { Search } from "lucide-react";
@@ -20,6 +20,7 @@ async function uploadFoto(file: File): Promise<string> {
 const empty = { nama: "", kategoriId: "", harga: "100000", durasiMenit: "60", stok: "0", deskripsi: "", isLayanan: true, foto: "" };
 
 export default function ProdukClient({ canDelete = true }: { canDelete?: boolean }) {
+  const { alert, confirm, toast } = useAlert();
   const [data, setData] = useState<P[]>([]);
   const [kat, setKat] = useState<K[]>([]);
   const [form, setForm] = useState(empty);
@@ -80,8 +81,9 @@ export default function ProdukClient({ canDelete = true }: { canDelete?: boolean
     try {
       const url = await uploadFoto(f);
       setForm((s) => ({ ...s, foto: url }));
+      toast.success("Foto produk berhasil diupload");
     } catch (err) {
-      alert(err instanceof Error ? err.message : "Upload gagal");
+      await alert(err instanceof Error ? err.message : "Upload gagal", "Gagal Upload", "error");
     }
     setUploading(false);
   }
@@ -101,11 +103,14 @@ export default function ProdukClient({ canDelete = true }: { canDelete?: boolean
     load();
   }
   async function hapus(id: string) {
-    if (!confirm("Hapus produk ini?")) return;
+    const isOk = await confirm("Hapus produk ini?", "Konfirmasi Hapus Produk");
+    if (!isOk) return;
     const r = await fetch(`/api/cms/produk?id=${id}`, { method: "DELETE" });
     if (!r.ok) {
       const j = await r.json().catch(() => ({}));
-      alert(j.error ?? "Gagal: hanya OWNER/ADMIN yang bisa hapus");
+      await alert(j.error ?? "Gagal: hanya OWNER/ADMIN yang bisa hapus", "Akses Ditolak", "error");
+    } else {
+      toast.success("Produk berhasil dihapus.");
     }
     load();
   }

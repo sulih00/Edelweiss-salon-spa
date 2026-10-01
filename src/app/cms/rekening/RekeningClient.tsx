@@ -1,6 +1,6 @@
 "use client";
 import { useEffect, useState, useCallback } from "react";
-import { Input, Label, Btn } from "@/components/ui";
+import { Input, Label, Btn, useAlert } from "@/components/ui";
 import { Modal, PageHeader, AddButton, TableShell, Th, Td, RowBtn, Empty, Switch } from "@/components/admin";
 
 type R = { id: string; bank: string; nomor: string; atasNama: string; aktif: boolean; urutan: number };
@@ -8,6 +8,7 @@ type R = { id: string; bank: string; nomor: string; atasNama: string; aktif: boo
 const empty = { bank: "", nomor: "", atasNama: "Edelweiss Salon Spa", urutan: "" };
 
 export default function RekeningClient() {
+  const { confirm, toast } = useAlert();
   const [data, setData] = useState<R[]>([]);
   const [form, setForm] = useState(empty);
   const [err, setErr] = useState("");
@@ -45,8 +46,10 @@ export default function RekeningClient() {
   }
 
   async function hapus(id: string) {
-    if (!confirm("Hapus rekening ini?")) return;
+    const isOk = await confirm("Hapus rekening ini?", "Hapus Rekening");
+    if (!isOk) return;
     await fetch(`/api/cms/rekening?id=${id}`, { method: "DELETE" });
+    toast.success("Rekening berhasil dihapus.");
     load();
   }
 

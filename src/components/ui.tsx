@@ -29,3 +29,9 @@ export function Input(props: React.InputHTMLAttributes<HTMLInputElement>) {
 export function Label({ children, className, ...props }: React.LabelHTMLAttributes<HTMLLabelElement>) {
   return <label className={cn("mb-1 block text-xs font-semibold uppercase tracking-wide text-stone-500", className)} {...props}>{children}</label>;
 }
+
+export { Alert } from "./Alert";
+export type { AlertProps, AlertType } from "./Alert";
+export { AlertProvider, useAlert } from "./AlertProvider";
+export type { ModalAlertOptions, PromptAlertOptions } from "./AlertProvider";
+

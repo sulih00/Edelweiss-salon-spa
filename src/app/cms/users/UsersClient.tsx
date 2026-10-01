@@ -1,11 +1,12 @@
 "use client";
 import { useEffect, useState, useCallback, useMemo } from "react";
-import { Input, Label, Btn } from "@/components/ui";
+import { Input, Label, Btn, useAlert } from "@/components/ui";
 import { Modal, PageHeader, AddButton, TableShell, Th, Td, Badge, RowBtn, Empty, Pagination } from "@/components/admin";
 
 type U = { id: string; name: string; email: string; role: string };
 
 export default function UsersClient() {
+  const { alert, confirm, toast } = useAlert();
   const [data, setData] = useState<U[]>([]);
   const [form, setForm] = useState({ name: "", email: "", password: "", role: "KASIR" });
   const [err, setErr] = useState("");
@@ -48,10 +49,15 @@ export default function UsersClient() {
   }
 
   async function hapus(id: string) {
-    if (!confirm("Hapus user ini?")) return;
+    const isOk = await confirm("Hapus user ini?", "Konfirmasi Hapus User");
+    if (!isOk) return;
     const r = await fetch(`/api/cms/users?id=${id}`, { method: "DELETE" });
     const j = await r.json();
-    if (!r.ok) alert(j.error ?? "Gagal");
+    if (!r.ok) {
+      await alert(j.error ?? "Gagal menghapus user", "Gagal", "error");
+    } else {
+      toast.success("User telah dihapus.");
+    }
     load();
   }
 

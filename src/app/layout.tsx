@@ -41,10 +41,14 @@ export const metadata: Metadata = {
   robots: { index: true, follow: true },
 };
 
+import { AlertProvider } from "@/components/AlertProvider";
+
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
     <html lang="id" className={`${serif.variable} ${sans.variable}`}>
-      <body className="flex min-h-screen flex-col bg-[#fdfbf7]">{children}</body>
+      <body className="flex min-h-screen flex-col bg-[#fdfbf7]">
+        <AlertProvider>{children}</AlertProvider>
+      </body>
     </html>
   );
 }

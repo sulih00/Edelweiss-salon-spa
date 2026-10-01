@@ -1,11 +1,12 @@
 "use client";
 import { useEffect, useState, useCallback } from "react";
-import { Input, Label, Btn } from "@/components/ui";
+import { Input, Label, Btn, useAlert } from "@/components/ui";
 import { Modal, PageHeader, AddButton, Badge, RowBtn, Empty } from "@/components/admin";
 
 type G = { id: string; foto: string; judul?: string | null; tampil: boolean };
 
 export default function GaleriClient() {
+  const { alert, confirm, toast } = useAlert();
   const [data, setData] = useState<G[]>([]);
   const [judul, setJudul] = useState("");
   const [foto, setFoto] = useState("");
@@ -38,8 +39,12 @@ export default function GaleriClient() {
     const r = await fetch("/api/cms/upload", { method: "POST", body: fd });
     const j = await r.json();
     setUploading(false);
-    if (r.ok) setFoto(j.url);
-    else alert(j.error ?? "Upload gagal");
+    if (r.ok) {
+      setFoto(j.url);
+      toast.success("Foto berhasil diupload!");
+    } else {
+      await alert(j.error ?? "Upload foto gagal", "Gagal Upload", "error");
+    }
   }
 
   function openModal() {
@@ -58,8 +63,10 @@ export default function GaleriClient() {
   }
 
   async function hapus(id: string) {
-    if (!confirm("Hapus foto?")) return;
+    const isOk = await confirm("Apakah Anda yakin ingin menghapus foto ini?", "Hapus Foto");
+    if (!isOk) return;
     await fetch(`/api/cms/galeri?id=${id}`, { method: "DELETE" });
+    toast.success("Foto berhasil dihapus.");
     load();
   }
 
