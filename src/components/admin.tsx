@@ -1,7 +1,43 @@
 "use client";
 import { useEffect } from "react";
-import { X, Plus, Inbox } from "lucide-react";
+import Link from "next/link";
+import { X, Plus, Inbox, ChevronRight, Home } from "lucide-react";
 import { cn } from "@/lib/utils";
+
+/* ---------- Component Breadcrumb Admin ---------- */
+export function Breadcrumb({
+  items,
+  className,
+}: {
+  items: { label: string; href?: string }[];
+  className?: string;
+}) {
+  return (
+    <nav className={cn("mb-1.5 flex items-center gap-1.5 text-xs overflow-x-auto no-scrollbar", className)}>
+      <Link
+        href="/cms"
+        className="flex items-center gap-1 font-medium text-stone-500 hover:text-sage-700 transition shrink-0"
+      >
+        <Home size={13} className="text-sage-600 shrink-0" />
+        <span>Admin</span>
+      </Link>
+      {items.map((it, i) => (
+        <span key={i} className="flex items-center gap-1.5 shrink-0">
+          <ChevronRight size={12} className="text-gold-400 shrink-0" />
+          {it.href ? (
+            <Link href={it.href} className="font-medium text-stone-500 hover:text-sage-700 transition">
+              {it.label}
+            </Link>
+          ) : (
+            <span className="font-semibold text-sage-900 bg-sage-50 px-2 py-0.5 rounded-md border border-sage-200/80">
+              {it.label}
+            </span>
+          )}
+        </span>
+      ))}
+    </nav>
+  );
+}
 
 /* ---------- Modal standar admin ---------- */
 export function Modal({
@@ -60,14 +96,17 @@ export function PageHeader({
   title,
   desc,
   action,
+  breadcrumb,
 }: {
   title: string;
   desc?: string;
   action?: React.ReactNode;
+  breadcrumb?: { label: string; href?: string }[];
 }) {
   return (
     <div className="mb-5 flex flex-wrap items-end justify-between gap-3">
       <div>
+        {breadcrumb && breadcrumb.length > 0 && <Breadcrumb items={breadcrumb} />}
         <h1 className="text-2xl font-bold tracking-tight text-stone-900">{title}</h1>
         {desc && <p className="mt-1 text-sm text-stone-500">{desc}</p>}
       </div>

@@ -7,8 +7,26 @@ import {
   LayoutDashboard, CalendarCheck, Scissors, Wallet, TicketPercent,
   Image as ImageIcon, Users, Briefcase, ShieldCheck, ShoppingCart,
   Menu, Globe, LogOut, Bell, ChevronDown, CalendarDays, CircleCheck, FileText, Landmark, MessageSquareHeart, MapPin,
+  ChevronRight, Home,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
+
+const pathLabels: Record<string, string> = {
+  "/cms": "Dashboard",
+  "/cms/kasir": "Kasir (POS)",
+  "/cms/booking": "Booking & Jadwal",
+  "/cms/produk": "Produk & Layanan",
+  "/cms/keuangan": "Keuangan Salon",
+  "/cms/rekening": "Rekening Bank",
+  "/cms/laporan": "Laporan Rekap",
+  "/cms/promo": "Voucher & Promo",
+  "/cms/galeri": "Galeri Foto",
+  "/cms/testimoni": "Testimoni Pelanggan",
+  "/cms/pelanggan": "Data Pelanggan",
+  "/cms/karyawan": "Manajemen Karyawan",
+  "/cms/lokasi": "Maps & Lokasi",
+  "/cms/users": "Manajemen User",
+};
 
 const icons: Record<string, React.ReactNode> = {
   dashboard: <LayoutDashboard size={18} />,
@@ -69,6 +87,28 @@ export default function AdminShell({
 
   const initial = (email?.[0] ?? "A").toUpperCase();
   const activeLabel = menu.find((m) => m.href === path)?.label ?? "Dashboard";
+
+  const getBreadcrumbs = () => {
+    if (path === "/cms") {
+      return [{ label: "Dashboard" }];
+    }
+    const matchedMenu = menu.find((m) => m.href === path);
+    if (matchedMenu) {
+      return [{ label: matchedMenu.label }];
+    }
+    if (path.startsWith("/cms/struk")) {
+      return [{ label: "Booking & Jadwal", href: "/cms/booking" }, { label: "Detail Struk Nota" }];
+    }
+    const segments = path.split("/").filter(Boolean);
+    return segments.slice(1).map((s, idx) => {
+      const subPath = "/cms/" + segments.slice(1, idx + 2).join("/");
+      const label = pathLabels[subPath] ?? s.charAt(0).toUpperCase() + s.slice(1);
+      return idx === segments.length - 2 ? { label } : { label, href: subPath };
+    });
+  };
+
+  const breadcrumbs = getBreadcrumbs();
+  const currentTitle = breadcrumbs[breadcrumbs.length - 1]?.label ?? activeLabel;
 
   const sidebar = (
     <div className="flex h-full flex-col bg-sage-900 text-sage-100">
@@ -141,13 +181,31 @@ export default function AdminShell({
               <Menu size={18} />
             </button>
 
-            <div className="min-w-0">
-              <div className="hidden items-center gap-2 text-xs text-stone-400 md:flex">
-                <span>CMS</span>
-                <span>/</span>
-                <span className="font-semibold text-stone-700">{activeLabel}</span>
-              </div>
-              <h2 className="truncate text-base font-bold text-stone-900 md:text-lg">{activeLabel}</h2>
+            <div className="min-w-0 flex-1">
+              <nav className="flex items-center gap-1.5 text-xs overflow-x-auto no-scrollbar py-0.5">
+                <Link
+                  href="/cms"
+                  className="flex items-center gap-1 font-medium text-stone-500 hover:text-sage-700 transition shrink-0"
+                >
+                  <Home size={13} className="text-sage-600 shrink-0" />
+                  <span>Admin</span>
+                </Link>
+                {breadcrumbs.map((b, idx) => (
+                  <span key={idx} className="flex items-center gap-1.5 shrink-0">
+                    <ChevronRight size={12} className="text-gold-400 shrink-0" />
+                    {b.href ? (
+                      <Link href={b.href} className="font-medium text-stone-500 hover:text-sage-700 transition">
+                        {b.label}
+                      </Link>
+                    ) : (
+                      <span className="font-semibold text-sage-900 bg-sage-50 px-2 py-0.5 rounded-lg border border-sage-200/80 shadow-2xs">
+                        {b.label}
+                      </span>
+                    )}
+                  </span>
+                ))}
+              </nav>
+              <h2 className="truncate text-base font-bold text-stone-900 md:text-lg">{currentTitle}</h2>
             </div>
 
             <p className="ml-2 hidden items-center gap-1.5 text-xs text-stone-400 lg:flex">
