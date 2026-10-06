@@ -65,7 +65,7 @@ export default async function Home() {
           __html: JSON.stringify({
             "@context": "https://schema.org",
             "@type": "BeautySalon",
-            name: "Edelweiss Salon Spa",
+            name: "Edelweiss Salon Makeup Art",
             description: "Hair studio, body massage, facial & nail art. Terapis bersertifikat, booking online mudah.",
             telephone: "+62-857-2881-8103",
             address: { "@type": "PostalAddress", streetAddress: "Jl. Mawar No. 12", addressLocality: "Kota Anda", addressCountry: "ID" },
@@ -84,7 +84,7 @@ export default async function Home() {
             <Reveal>
               <p className="inline-flex items-center gap-2 rounded-full border border-sage-200 bg-white/80 px-4 py-1.5 text-xs font-semibold text-sage-700 shadow-sm backdrop-blur">
                 <span className="relative flex h-2 w-2"><span className="absolute h-full w-full animate-ping rounded-full bg-sage-600 opacity-60" /><span className="relative h-2 w-2 rounded-full bg-sage-600" /></span>
-                Salon & Spa — slot hari ini tersedia
+                Salon & Makeup Art — slot hari ini tersedia
               </p>
             </Reveal>
             <Reveal delay={0.1}>
@@ -94,7 +94,7 @@ export default async function Home() {
             </Reveal>
             <Reveal delay={0.2}>
               <p className="mt-5 max-w-md leading-relaxed text-stone-600">
-                Edelweiss Salon Spa: hair studio, body massage, facial, dan nail art. Terapis bersertifikat, aroma terapi, dan ruangan yang bikin betah.
+                Edelweiss Salon Makeup Art: hair studio, body massage, facial, dan nail art. Terapis bersertifikat, aroma terapi, dan ruangan yang bikin betah.
               </p>
             </Reveal>
             <Reveal delay={0.3}>
@@ -123,7 +123,7 @@ export default async function Home() {
                   <div className="relative h-[420px] w-full">
                     <Image
                       src={galeri[0].foto}
-                      alt="Ruang Spa Edelweiss Salon Spa"
+                      alt="Studio Makeup Art Edelweiss Salon Makeup Art"
                       fill
                       sizes="(max-width: 768px) 100vw, 50vw"
                       className="object-cover transition duration-700 hover:scale-105"
@@ -133,7 +133,7 @@ export default async function Home() {
                 ) : (
                   <div className="flex h-[420px] flex-col items-center justify-center gap-3 bg-gradient-to-br from-sage-700 via-sage-800 to-sage-900 text-white">
                     <Flower2 size={48} className="text-gold-300" />
-                    <p className="font-serif-display text-3xl italic">Ruang Spa Edelweiss</p>
+                    <p className="font-serif-display text-3xl italic">Studio Makeup Art Edelweiss</p>
                     <p className="text-sm text-white/70">Tenang • Wangi • Bersih</p>
                   </div>
                 )}

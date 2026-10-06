@@ -8,7 +8,7 @@ export function waLink(phone: string, message: string) {
 }
 
 export function pesanBookingBaru(nama: string, layanan: string, jadwal: string, buktiTF?: string | null, nominalTF?: number | null) {
-  let msg = `Halo Edelweiss Salon Spa! Saya ${nama}. Saya sudah booking ${layanan} untuk ${jadwal}.`;
+  let msg = `Halo Edelweiss Salon Makeup Art! Saya ${nama}. Saya sudah booking ${layanan} untuk ${jadwal}.`;
   if (nominalTF && nominalTF > 0) {
     msg += `\nDP/Nominal Transfer: Rp ${nominalTF.toLocaleString("id-ID")}`;
   }
@@ -22,7 +22,7 @@ export function pesanBookingBaru(nama: string, layanan: string, jadwal: string, 
 }
 
 export function pesanKonfirmasiAdmin(nama: string, layanan: string, jadwal: string) {
-  return `Halo ${nama}, booking ${layanan} pada ${jadwal} di Edelweiss Salon Spa sudah KAMI KONFIRMASI. Sampai jumpa!`;
+  return `Halo ${nama}, booking ${layanan} pada ${jadwal} di Edelweiss Salon Makeup Art sudah KAMI KONFIRMASI. Sampai jumpa!`;
 }
 
 export function pesanStrukWA({
@@ -48,7 +48,7 @@ export function pesanStrukWA({
   terapis?: string | null;
   strukUrl?: string | null;
 }) {
-  let msg = `🧾 *NOTA PEMBAYARAN EDELWEISS SALON SPA*\n`;
+  let msg = `🧾 *NOTA PEMBAYARAN EDELWEISS SALON MAKEUP ART*\n`;
   msg += `No. Nota: *${noNota}*\n`;
   msg += `Tanggal: ${jadwal}\n`;
   msg += `Pelanggan: *${nama}*\n`;
@@ -64,6 +64,6 @@ export function pesanStrukWA({
   if (strukUrl) {
     msg += `\n🔗 Link Nota Digital:\n${strukUrl}\n`;
   }
-  msg += `\nTerima kasih telah merawat diri di Edelweiss Salon Spa 🌿`;
+  msg += `\nTerima kasih telah merawat diri di Edelweiss Salon Makeup Art 🌿`;
   return msg;
 }

@@ -316,7 +316,7 @@ export function AlertProvider({ children }: { children: React.ReactNode }) {
                     {modal.options.title ?? (modal.options.isConfirm ? "Konfirmasi" : "Notifikasi")}
                   </h3>
                   <p className="text-xs text-stone-500 uppercase tracking-wider font-semibold">
-                    Edelweiss Salon & Spa
+                    Edelweiss Salon & Makeup Art
                   </p>
                 </div>
               </div>
@@ -390,7 +390,7 @@ export function AlertProvider({ children }: { children: React.ReactNode }) {
                       {promptState.options.title ?? "Input Data"}
                     </h3>
                     <p className="text-xs text-stone-500 uppercase tracking-wider font-semibold">
-                      Edelweiss Salon & Spa
+                      Edelweiss Salon & Makeup Art
                     </p>
                   </div>
                 </div>

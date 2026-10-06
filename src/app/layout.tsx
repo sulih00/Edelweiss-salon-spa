@@ -10,11 +10,11 @@ const BASE = process.env.NEXT_PUBLIC_SITE_URL ?? "https://edelweiss-salon-spa.lo
 export const metadata: Metadata = {
   metadataBase: new URL(BASE),
   title: {
-    default: "Edelweiss Salon Spa — Cantik, Rileks, Glowing",
-    template: "%s | Edelweiss Salon Spa",
+    default: "Edelweiss Salon Makeup Art — Cantik, Rileks, Glowing",
+    template: "%s | Edelweiss Salon Makeup Art",
   },
-  description: "Edelweiss Salon Spa: hair studio, body massage, facial, nail art. Terapis bersertifikat, booking online mudah.",
-  keywords: ["salon", "spa", "facial", "massage", "creambath", "manicure pedicure", "salon spa"],
+  description: "Edelweiss Salon Makeup Art: hair studio, body massage, facial, nail art. Terapis bersertifikat, booking online mudah.",
+  keywords: ["salon", "makeup art", "facial", "massage", "creambath", "manicure pedicure", "salon makeup art"],
   icons: {
     icon: [
       { url: "/favicon.ico" },
@@ -25,9 +25,9 @@ export const metadata: Metadata = {
   openGraph: {
     type: "website",
     locale: "id_ID",
-    siteName: "Edelweiss Salon Spa",
-    title: "Edelweiss Salon Spa — Cantik, Rileks, Glowing",
-    description: "Hair studio, body spa, facial & nails. Booking online, konfirmasi via WhatsApp.",
+    siteName: "Edelweiss Salon Makeup Art",
+    title: "Edelweiss Salon Makeup Art — Cantik, Rileks, Glowing",
+    description: "Hair studio, makeup art, facial & nails. Booking online, konfirmasi via WhatsApp.",
     images: [
       {
         url: "/logo.png",

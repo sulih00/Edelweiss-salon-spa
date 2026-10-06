@@ -112,7 +112,7 @@ export default function GaleriClient() {
             )}
             {uploading && <p className="text-xs text-stone-400">Mengupload...</p>}
           </div>
-          <div><Label>Judul</Label><Input value={judul} onChange={(e) => setJudul(e.target.value)} placeholder="Ruang Spa Edelweiss" /></div>
+          <div><Label>Judul</Label><Input value={judul} onChange={(e) => setJudul(e.target.value)} placeholder="Studio Makeup Art Edelweiss" /></div>
           <div className="flex justify-end gap-2">
             <button type="button" onClick={() => setModal(false)} className="rounded-full border border-stone-300 px-5 py-2.5 text-sm">Batal</button>
             <Btn disabled={!foto || uploading}>{uploading ? "Upload..." : "Simpan"}</Btn>

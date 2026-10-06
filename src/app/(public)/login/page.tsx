@@ -25,7 +25,7 @@ export default function LoginPage() {
         <Image src="/logo.png" alt="Edelweiss Logo" fill className="object-cover" priority />
       </div>
       <h1 className="font-serif-display text-3xl font-bold text-sage-900">Login CMS</h1>
-      <p className="mt-1 text-sm text-stone-500">Edelweiss Salon Spa — Owner / Admin / Kasir</p>
+      <p className="mt-1 text-sm text-stone-500">Edelweiss Salon Makeup Art — Owner / Admin / Kasir</p>
       <form onSubmit={submit} className="mt-6 space-y-4 rounded-2xl border bg-white p-6 text-left">
         <div><Label>Email</Label><Input value={email} onChange={(e) => setEmail(e.target.value)} /></div>
         <div><Label>Password</Label><Input type="password" value={password} onChange={(e) => setPassword(e.target.value)} /></div>

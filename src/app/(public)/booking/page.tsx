@@ -6,7 +6,7 @@ import type { Metadata } from "next";
 
 export const metadata: Metadata = {
   title: "Booking Online",
-  description: "Booking treatment Edelweiss Salon Spa dalam 3 langkah: pilih layanan, isi data, tentukan jadwal. Konfirmasi otomatis via WhatsApp.",
+  description: "Booking treatment Edelweiss Salon Makeup Art dalam 3 langkah: pilih layanan, isi data, tentukan jadwal. Konfirmasi otomatis via WhatsApp.",
 };
 
 export const dynamic = "force-dynamic";

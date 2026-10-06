@@ -5,7 +5,7 @@ import { Modal, PageHeader, AddButton, TableShell, Th, Td, RowBtn, Empty, Switch
 
 type R = { id: string; bank: string; nomor: string; atasNama: string; aktif: boolean; urutan: number };
 
-const emptyForm = { bank: "", nomor: "", atasNama: "Edelweiss Salon Spa", urutan: "" };
+const emptyForm = { bank: "", nomor: "", atasNama: "Edelweiss Salon Makeup Art", urutan: "" };
 
 export default function RekeningClient() {
   const { alert, confirm, toast } = useAlert();

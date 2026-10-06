@@ -195,7 +195,7 @@ model Testimoni {
 
 model Lokasi {
   id        String   @id @default(cuid())
-  nama      String   @default("Edelweiss Salon & Spa")
+  nama      String   @default("Edelweiss Salon & Makeup Art")
   alamat    String?
   lat       Float
   lon       Float

@@ -246,7 +246,7 @@ export default function StrukClientView({ data }: { data: StrukData }) {
               Edelweiss
             </h2>
             <p className="text-[10px] tracking-[0.35em] font-semibold text-gold-500 uppercase">
-              SALON • SPA
+              SALON • MAKEUP ART
             </p>
             <p className="mt-1 text-[11px] text-stone-400 leading-tight">
               Jl. Mawar No. 12 • WA: 0822-2564-2137

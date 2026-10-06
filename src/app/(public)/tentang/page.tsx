@@ -6,7 +6,7 @@ import type { Metadata } from "next";
 
 export const metadata: Metadata = {
   title: "Tentang Kami",
-  description: "Cerita Edelweiss Salon Spa: terapis bersertifikat, produk aman BPOM, dan ruangan tenang untuk merawat diri.",
+  description: "Cerita Edelweiss Salon Makeup Art: terapis bersertifikat, produk aman BPOM, dan ruangan tenang untuk merawat diri.",
 };
 
 export const dynamic = "force-dynamic";
@@ -14,7 +14,7 @@ export const dynamic = "force-dynamic";
 const values = [
   { icon: Leaf, t: "Bahan alami & aman", d: "Produk BPOM, essential oil murni, dan alat steril setiap pemakaian." },
   { icon: HeartHandshake, t: "Pelayanan tulus", d: "Konsultasi jujur — kami sarankan yang kamu butuhkan, bukan yang termahal." },
-  { icon: Award, t: "Terapis bersertifikat", d: "Tim dilatih rutin: hair, spa, facial, dan nail art." },
+  { icon: Award, t: "Terapis bersertifikat", d: "Tim dilatih rutin: hair, makeup art, facial, dan nail art." },
   { icon: Sparkles, t: "Detail estetik", d: "Ruangan wangi, musik lembut, teh hangat — setiap kunjungan terasa spesial." },
 ];
 

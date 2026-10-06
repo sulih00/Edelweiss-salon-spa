@@ -305,7 +305,7 @@ export default function AdminShell({
               <span className="relative flex h-6 w-6 shrink-0 overflow-hidden rounded-full border border-gold-400/30 bg-white">
                 <Image src="/logo.png" alt="Edelweiss" fill sizes="24px" className="object-cover" />
               </span>
-              © {new Date().getFullYear()} <b className="text-stone-600">Edelweiss Salon Spa</b> • Admin Panel v1.0
+              © {new Date().getFullYear()} <b className="text-stone-600">Edelweiss Salon Makeup Art</b> • Admin Panel v1.0
             </p>
             <div className="flex items-center gap-4">
               <span className="flex items-center gap-1.5">

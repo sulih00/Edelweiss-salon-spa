@@ -169,7 +169,7 @@ export default async function CmsDashboard() {
       {/* Header */}
       <PageHeader
         title="Dashboard Analitik Operasional"
-        desc="Visualisasi arus kas, kinerja perawatan, dan performa transaksi Edelweiss Salon & Spa."
+        desc="Visualisasi arus kas, kinerja perawatan, dan performa transaksi Edelweiss Salon & Makeup Art."
       />
 
       {/* Primary Metric Stat Cards */}

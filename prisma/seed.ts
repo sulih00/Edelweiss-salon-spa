@@ -29,7 +29,7 @@ async function main() {
     "Smoothing & Keratin",
     "Hair Colouring",
     "Eyelash & Brow Bomber",
-    "Hairmask, Creambath & Spa",
+    "Hairmask, Creambath & Makeup Art",
     "Men Service",
     "Face Treatment",
     "Nail Art & Care",
@@ -101,12 +101,12 @@ async function main() {
     { nama: "Lashlift Classic", cat: "Eyelash & Brow Bomber", harga: 65000, durasiMenit: 60, deskripsi: "Lashlift klasik pelentik bulu mata asli." },
     { nama: "Brow Bomber Classic", cat: "Eyelash & Brow Bomber", harga: 125000, durasiMenit: 60, deskripsi: "Brow bomber kerapihan alis." },
 
-    // Hairmask, Creambath & Spa
-    { nama: "Hairmask Buah", cat: "Hairmask, Creambath & Spa", harga: 60000, durasiMenit: 60, deskripsi: "Hairmask aroma buah *include catok lurus + free hair serum." },
-    { nama: "Hairmask Keratin", cat: "Hairmask, Creambath & Spa", harga: 80000, durasiMenit: 60, deskripsi: "Hairmask formula keratin *include catok lurus + free hair serum." },
-    { nama: "Hair Detox", cat: "Hairmask, Creambath & Spa", harga: 85000, durasiMenit: 60, deskripsi: "Hair detox pembersih folikel *include catok lurus + free hair serum." },
-    { nama: "Creambath Buah", cat: "Hairmask, Creambath & Spa", harga: 65000, durasiMenit: 60, deskripsi: "Creambath aroma buah + pijat relaksasi *free hair serum." },
-    { nama: "Hairspa Loreal", cat: "Hairmask, Creambath & Spa", harga: 90000, durasiMenit: 60, deskripsi: "Hairspa nutrisi Loreal *free hair serum." },
+    // Hairmask, Creambath & Makeup Art
+    { nama: "Hairmask Buah", cat: "Hairmask, Creambath & Makeup Art", harga: 60000, durasiMenit: 60, deskripsi: "Hairmask aroma buah *include catok lurus + free hair serum." },
+    { nama: "Hairmask Keratin", cat: "Hairmask, Creambath & Makeup Art", harga: 80000, durasiMenit: 60, deskripsi: "Hairmask formula keratin *include catok lurus + free hair serum." },
+    { nama: "Hair Detox", cat: "Hairmask, Creambath & Makeup Art", harga: 85000, durasiMenit: 60, deskripsi: "Hair detox pembersih folikel *include catok lurus + free hair serum." },
+    { nama: "Creambath Buah", cat: "Hairmask, Creambath & Makeup Art", harga: 65000, durasiMenit: 60, deskripsi: "Creambath aroma buah + pijat relaksasi *free hair serum." },
+    { nama: "Hairspa Loreal", cat: "Hairmask, Creambath & Makeup Art", harga: 90000, durasiMenit: 60, deskripsi: "Hairspa nutrisi Loreal *free hair serum." },
 
     // Men Service
     { nama: "Men Service - Hitam / Black", cat: "Men Service", harga: 50000, durasiMenit: 45, deskripsi: "Pewarnaan hitam khusus pria." },
@@ -196,7 +196,7 @@ async function main() {
   if (!existingLokasi) {
     await prisma.lokasi.create({
       data: {
-        nama: "Edelweiss Salon & Spa",
+        nama: "Edelweiss Salon & Makeup Art",
         alamat: "Jl. Anggrek No. 123, Jakarta",
         lat: -6.2088,
         lon: 106.8456,

@@ -50,7 +50,7 @@ export default function Navbar() {
             </div>
             <span className="leading-tight">
               <span className="font-serif-display block text-xl font-bold text-sage-800">Edelweiss</span>
-              <span className="block text-[10px] tracking-[0.3em] font-medium text-gold-600">SALON • SPA</span>
+              <span className="block text-[10px] tracking-[0.3em] font-medium text-gold-600">SALON • MAKEUP ART</span>
             </span>
           </Link>
           <nav className="hidden items-center gap-6 text-sm md:flex">

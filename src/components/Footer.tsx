@@ -23,11 +23,11 @@ export default function Footer() {
             </div>
             <div>
               <p className="font-serif-display text-2xl font-bold text-white">Edelweiss</p>
-              <p className="text-[10px] tracking-[0.3em] text-gold-300">SALON • SPA</p>
+              <p className="text-[10px] tracking-[0.3em] text-gold-300">SALON • MAKEUP ART</p>
             </div>
           </div>
           <p className="mt-4 max-w-sm text-sm leading-relaxed text-sage-100/75">
-            Ritual cantik & rileks dalam satu tempat yang tenang — hair studio, body spa, facial, dan nail art dengan terapis bersertifikat.
+            Ritual cantik & rileks dalam satu tempat yang tenang — hair studio, makeup art, facial, dan nail art dengan terapis bersertifikat.
           </p>
           <div className="mt-5 flex flex-wrap gap-2">
             <Link href="/booking" className="rounded-full bg-gold-400 px-5 py-2.5 text-sm font-semibold text-sage-900 transition hover:-translate-y-0.5 hover:bg-gold-300 shadow-md">
@@ -76,7 +76,7 @@ export default function Footer() {
         </div>
       </div>
       <div className="relative border-t border-white/10 py-4 text-center text-xs text-sage-100/50">
-        © {new Date().getFullYear()} Edelweiss Salon Spa — crafted with calm 🌿
+        © {new Date().getFullYear()} Edelweiss Salon Makeup Art — crafted with calm 🌿
       </div>
     </footer>
   );

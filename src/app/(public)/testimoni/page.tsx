@@ -6,7 +6,7 @@ import type { Metadata } from "next";
 
 export const metadata: Metadata = {
   title: "Testimoni",
-  description: "Ulasan asli pelanggan Edelweiss Salon Spa dengan rating 4.9 dari 800+ treatment.",
+  description: "Ulasan asli pelanggan Edelweiss Salon Makeup Art dengan rating 4.9 dari 800+ treatment.",
 };
 
 export const dynamic = "force-dynamic";

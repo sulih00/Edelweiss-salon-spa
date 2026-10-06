@@ -6,7 +6,7 @@ import type { Metadata } from "next";
 
 export const metadata: Metadata = {
   title: "Layanan & Harga",
-  description: "Daftar layanan Edelweiss Salon Spa beserta harga transparan: haircut, creambath, massage, facial, manicure pedicure, paket bride.",
+  description: "Daftar layanan Edelweiss Salon Makeup Art beserta harga transparan: haircut, creambath, massage, facial, manicure pedicure, paket bride.",
 };
 
 export const dynamic = "force-dynamic";

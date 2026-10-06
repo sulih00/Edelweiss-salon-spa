@@ -28,7 +28,7 @@ export default function FloatingWA() {
 
       {/* Floating WhatsApp Button */}
       <a
-        href={`https://wa.me/${WA_ADMIN}?text=${encodeURIComponent("Halo Edelweiss Salon Spa! Saya mau tanya ketersediaan slot treatment hari ini.")}`}
+        href={`https://wa.me/${WA_ADMIN}?text=${encodeURIComponent("Halo Edelweiss Salon Makeup Art! Saya mau tanya ketersediaan slot treatment hari ini.")}`}
         target="_blank"
         rel="noreferrer"
         aria-label="Chat WhatsApp"

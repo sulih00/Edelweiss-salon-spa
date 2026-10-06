@@ -8,7 +8,7 @@ import type { Metadata } from "next";
 
 export const metadata: Metadata = {
   title: "Kontak & Lokasi",
-  description: "Hubungi Edelweiss Salon Spa via WhatsApp, kunjungi outlet kami, atau lihat jam operasional. Buka setiap hari 09.00–20.00.",
+  description: "Hubungi Edelweiss Salon Makeup Art via WhatsApp, kunjungi outlet kami, atau lihat jam operasional. Buka setiap hari 09.00–20.00.",
 };
 
 export const dynamic = "force-dynamic";
@@ -24,7 +24,7 @@ export default async function Kontak() {
   const lat = lokasi?.lat ?? -6.2088;
   const lon = lokasi?.lon ?? 106.8456;
   const zoom = lokasi?.zoom ?? 16;
-  const namaLokasi = lokasi?.nama ?? "Edelweiss Salon & Spa";
+  const namaLokasi = lokasi?.nama ?? "Edelweiss Salon & Makeup Art";
   const alamatLokasi = lokasi?.alamat;
 
   return (

@@ -6,7 +6,7 @@ import type { Metadata } from "next";
 
 export const metadata: Metadata = {
   title: "Galeri",
-  description: "Lihat suasana outlet Edelweiss Salon Spa: ruang spa yang tenang, hair studio, dan nail corner.",
+  description: "Lihat suasana outlet Edelweiss Salon Makeup Art: studio makeup art yang tenang, hair studio, dan nail corner.",
 };
 
 export const dynamic = "force-dynamic";

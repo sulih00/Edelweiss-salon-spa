@@ -62,7 +62,7 @@ export async function POST(req: Request) {
 
       return tx.lokasi.create({
         data: {
-          nama: nama?.trim() || "Edelweiss Salon & Spa",
+          nama: nama?.trim() || "Edelweiss Salon & Makeup Art",
           alamat: alamat?.trim() || null,
           lat: parsedLat,
           lon: parsedLon,
@@ -114,7 +114,7 @@ export async function PUT(req: Request) {
       updateData.lon = parsedLon;
     }
 
-    if (nama !== undefined) updateData.nama = nama.trim() || "Edelweiss Salon & Spa";
+    if (nama !== undefined) updateData.nama = nama.trim() || "Edelweiss Salon & Makeup Art";
     if (alamat !== undefined) updateData.alamat = alamat ? alamat.trim() : null;
     if (zoom !== undefined && !isNaN(Number(zoom))) {
       updateData.zoom = Math.min(Math.max(Number(zoom), 1), 21);

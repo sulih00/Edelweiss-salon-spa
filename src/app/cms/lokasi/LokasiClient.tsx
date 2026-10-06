@@ -39,7 +39,7 @@ export default function LokasiClient() {
   const [editItem, setEditItem] = useState<LokasiItem | null>(null);
 
   // Form states focused on lat & lon
-  const [nama, setNama] = useState("Edelweiss Salon & Spa");
+  const [nama, setNama] = useState("Edelweiss Salon & Makeup Art");
   const [alamat, setAlamat] = useState("");
   const [latInput, setLatInput] = useState("");
   const [lonInput, setLonInput] = useState("");
@@ -74,7 +74,7 @@ export default function LokasiClient() {
 
   function openCreateModal() {
     setEditItem(null);
-    setNama("Edelweiss Salon & Spa");
+    setNama("Edelweiss Salon & Makeup Art");
     setAlamat("");
     setLatInput("-6.2088");
     setLonInput("106.8456");
@@ -390,7 +390,7 @@ export default function LokasiClient() {
                   required
                   value={nama}
                   onChange={(e) => setNama(e.target.value)}
-                  placeholder="Contoh: Edelweiss Salon & Spa - Pusat"
+                  placeholder="Contoh: Edelweiss Salon & Makeup Art - Pusat"
                   className="w-full rounded-2xl border border-stone-300 px-4 py-2.5 text-sm focus:border-sage-600 focus:outline-none"
                 />
               </div>

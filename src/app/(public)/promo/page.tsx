@@ -8,7 +8,7 @@ import type { Metadata } from "next";
 
 export const metadata: Metadata = {
   title: "Promo",
-  description: "Promo Edelweiss Salon Spa: diskon treatment, potongan paket bride. Catat kodenya dan pakai saat booking online.",
+  description: "Promo Edelweiss Salon Makeup Art: diskon treatment, potongan paket bride. Catat kodenya dan pakai saat booking online.",
 };
 
 export const dynamic = "force-dynamic";
