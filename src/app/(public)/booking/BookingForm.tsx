@@ -47,7 +47,6 @@ export default function BookingForm({
     catatan: "",
     kodePromo: "",
     buktiTF: "",
-    nominalTF: "",
   });
 
   const [msg, setMsg] = useState("");
@@ -134,11 +133,9 @@ export default function BookingForm({
     const j = await res.json();
     setTfLoading(false);
     if (res.ok) {
-      const suggestedDp = selectedLayanan ? Math.round(selectedLayanan.harga * 0.3) : 50000;
       setForm((s) => ({
         ...s,
         buktiTF: j.url,
-        nominalTF: s.nominalTF.trim() ? s.nominalTF : String(suggestedDp),
       }));
     } else setTfErr(j.error ?? "Upload gagal");
   }
@@ -155,13 +152,11 @@ export default function BookingForm({
     setMsg("");
     setWaUrl("");
     try {
-      const numNominal = Number(form.nominalTF) || 0;
       const res = await fetch("/api/booking", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           ...form,
-          nominalTF: numNominal,
           jadwal: fullJadwal,
           karyawanId: selectedKaryawan,
         }),
@@ -175,7 +170,7 @@ export default function BookingForm({
         const jadwalTxt = `${new Date(j.jadwal).toLocaleDateString("id-ID", { timeZone: "Asia/Jakarta", weekday: "long", day: "numeric", month: "long" })} jam ${new Date(j.jadwal).toLocaleTimeString("id-ID", { timeZone: "Asia/Jakarta", hour: "2-digit", minute: "2-digit" })}`;
         const terapisTxt = selectedTerapisObj ? ` dengan terapis ${selectedTerapisObj.nama}` : "";
         setMsg(`Booking ${j.layanan}${terapisTxt} untuk ${jadwalTxt} diterima.${j.diskon ? ` Hemat ${rupiah(j.diskon)} (total ${rupiah(j.total)}).` : ""}`);
-        setWaUrl(waLink(WA_ADMIN, pesanBookingBaru(j.nama, `${j.layanan}${terapisTxt}`, jadwalTxt, j.buktiTF, numNominal)));
+        setWaUrl(waLink(WA_ADMIN, pesanBookingBaru(j.nama, `${j.layanan}${terapisTxt}`, jadwalTxt, j.buktiTF)));
         setStep(3);
       } else setMsg("✕ " + (j.error ?? "Gagal"));
     } catch {
@@ -332,19 +327,20 @@ export default function BookingForm({
                 <p className="text-stone-600">
                   Jadwal: <b>{selectedDate && selectedJam ? `${selectedDate} jam ${selectedJam}` : "Belum pilih jam"}</b>
                 </p>
-                <p className="text-stone-500">
-                  Harga: {rupiah(selectedLayanan.harga)}
-                  {promo && <> − {rupiah(promo.diskon)} = <b className="text-sage-700">{rupiah(promo.total)}</b></>} • {selectedLayanan.durasiMenit} mnt
-                </p>
               </div>
             )}
 
             {/* Pembayaran & DP */}
             <div className="rounded-2xl border border-gold-400/50 bg-gold-400/10 p-4">
-              <p className="flex items-center gap-2 text-sm font-bold text-sage-900"><Landmark size={16} /> Transfer ke rekening resmi</p>
-              {(selectedLayanan?.harga ?? 0) >= DP_MINIMAL && (
-                <p className="mt-1 text-xs text-stone-500">Treatment ≥ {rupiah(DP_MINIMAL)} disarankan DP 30% agar slot terkunci.</p>
-              )}
+              <div className="flex flex-wrap items-center justify-between gap-2">
+                <p className="flex items-center gap-2 text-sm font-bold text-sage-900"><Landmark size={16} /> Transfer ke rekening resmi</p>
+                <span className="rounded-full bg-gold-400/30 px-3 py-1 text-xs font-bold text-sage-900 border border-gold-500/40">
+                  Minimal Booking: Rp 50.000
+                </span>
+              </div>
+              <p className="mt-1 text-xs text-stone-600">
+                Silakan melakukan transfer <b>minimal booking Rp 50.000</b> ke rekening resmi di bawah ini untuk konfirmasi jadwal.
+              </p>
               <div className="mt-2 space-y-2">
                 {rekening.length === 0 && (
                   <p className="rounded-xl bg-white px-3 py-2 text-xs text-stone-400">
@@ -379,19 +375,6 @@ export default function BookingForm({
                 )}
                 {tfErr && <p className="mt-1 text-xs text-red-600">✕ {tfErr}</p>}
               </div>
-
-              <div className="mt-3">
-                <Label>Nominal Transfer / DP (Rp)</Label>
-                <Input
-                  type="number"
-                  placeholder="cth 50000"
-                  value={form.nominalTF}
-                  onChange={(e) => setForm((s) => ({ ...s, nominalTF: e.target.value }))}
-                />
-                <p className="mt-1 text-[11px] text-stone-500">
-                  Nominal transfer ini akan otomatis tercatat dengan metode pembukuan <b>DEBIT</b> di Kasir.
-                </p>
-              </div>
             </div>
           </motion.div>
         )}
@@ -416,7 +399,7 @@ export default function BookingForm({
                   setPromo(null);
                   setPromoErr("");
                   setSelectedJam("");
-                  setForm({ nama: "", wa: "", produkId: layanan[0]?.id ?? "", karyawanId: "bebas", jadwal: "", catatan: "", kodePromo: "", buktiTF: "", nominalTF: "" });
+                  setForm({ nama: "", wa: "", produkId: layanan[0]?.id ?? "", karyawanId: "bebas", jadwal: "", catatan: "", kodePromo: "", buktiTF: "" });
                 }}
                 className="mt-3 text-sm text-stone-400 underline"
               >

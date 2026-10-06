@@ -8,16 +8,29 @@ export function isDbDown(e: unknown): boolean {
   );
 }
 
-/** Response 503 standar saat Supabase tidak terjangkau (tulis/create/update/delete). */
+/** Sanitasi pesan error agar tidak menampilkan pesan teknis mentah (Prisma/DB/Zod) ke user. */
+export function sanitizeError(e: unknown): string {
+  if (!e) return "Terjadi kesalahan pada sistem.";
+  const rawMsg = e instanceof Error ? e.message : String(e);
+
+  // Jika pesan memuat istilah teknis internal, ubah jadi kalimat sopan
+  if (/prisma|invocation|unique constraint|foreign key|syntax error|table|column|zod|validation|invalid|object|stack/i.test(rawMsg)) {
+    return "Terjadi kendala saat memproses data. Silakan coba beberapa saat lagi.";
+  }
+
+  return rawMsg;
+}
+
+/** Response 503 standar saat Supabase tidak terjangkau. */
 export function dbDownRes(e: unknown) {
-  console.error("[api] Database Supabase tidak terjangkau:", (e as Error)?.message ?? e);
+  console.error("[api] Database Supabase tidak terjangkau / timeout:", (e as Error)?.message ?? e);
   return NextResponse.json(
-    { error: "Database Supabase tidak terjangkau. Cek DATABASE_URL / DIRECT_URL di Vercel lalu Redeploy." },
+    { error: "Koneksi sistem sedang dalam pemeliharaan berkala. Silakan coba beberapa saat lagi." },
     { status: 503 }
   );
 }
 
-/** Bungkus handler tulis: error koneksi DB -> 503 jelas, error lain -> 500. */
+/** Bungkus handler API: error koneksi DB -> 503 ramah user, error lain -> 500 tersanitasi. */
 export async function withDb(
   fn: () => Promise<NextResponse>,
   opts?: { logTag?: string }
@@ -30,6 +43,7 @@ export async function withDb(
       return dbDownRes(e);
     }
     console.error(`[api${opts?.logTag ? `/${opts.logTag}` : ""}] error:`, e);
-    return NextResponse.json({ error: e instanceof Error ? e.message : "Terjadi kesalahan server" }, { status: 500 });
+    return NextResponse.json({ error: sanitizeError(e) }, { status: 500 });
   }
 }
+

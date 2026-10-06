@@ -32,8 +32,7 @@ export async function POST(req: Request) {
     const { data } = supa.storage.from(BUKTI_BUCKET).getPublicUrl(name);
     return NextResponse.json({ url: data.publicUrl });
   } catch (err) {
-    console.error("Upload bukti transfer error:", err);
-    const msg = err instanceof Error ? err.message : "Gagal mengunggah bukti transfer";
-    return NextResponse.json({ error: `Gagal mengunggah bukti transfer: ${msg}` }, { status: 500 });
+    console.error("[upload-bukti] error:", err);
+    return NextResponse.json({ error: "Gagal mengunggah bukti transfer. Silakan coba lagi atau kirim bukti via WhatsApp." }, { status: 500 });
   }
 }

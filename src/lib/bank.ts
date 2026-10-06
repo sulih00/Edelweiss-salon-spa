@@ -2,4 +2,4 @@
 // bukan lagi hardcoded di sini.
 export type Rekening = { bank: string; nomor: string; atasNama: string };
 
-export const DP_MINIMAL = 300000; // treatment >= ini disarankan DP 30%
+export const DP_MINIMAL = 50000; // Minimal DP Booking Rp 50.000
