@@ -3,6 +3,7 @@ import { useEffect, useState, useCallback } from "react";
 import { Input, Label, Btn, useAlert } from "@/components/ui";
 import { Modal, PageHeader, AddButton, TableShell, Th, Td, RowBtn, Empty, Switch, FilterTabs } from "@/components/admin";
 import { labelPromo } from "@/lib/promo";
+import { Pencil, Trash2 } from "lucide-react";
 
 type P = {
   id: string;
@@ -43,8 +44,33 @@ export default function PromoClient() {
   const [saving, setSaving] = useState(false);
   const [filter, setFilter] = useState<"semua" | "tampil" | "sembunyi">("semua");
 
+  const [sortCol, setSortCol] = useState<string>("kode");
+  const [sortDir, setSortDir] = useState<"asc" | "desc">("asc");
+
+  const handleSort = (col: string) => {
+    if (sortCol === col) setSortDir(sortDir === "asc" ? "desc" : "asc");
+    else { setSortCol(col); setSortDir("asc"); }
+  };
+
   const tampilCount = data.filter((d) => d.aktif).length;
-  const shown = data.filter((d) => filter === "semua" || (filter === "tampil" ? d.aktif : !d.aktif));
+  const shown = data
+    .filter((d) => filter === "semua" || (filter === "tampil" ? d.aktif : !d.aktif))
+    .sort((a, b) => {
+      let valA: string | number = (a[sortCol as keyof P] ?? "") as string | number;
+      let valB: string | number = (b[sortCol as keyof P] ?? "") as string | number;
+
+      if (sortCol === "berakhir") {
+        valA = a.berakhir ? new Date(a.berakhir).getTime() : 0;
+        valB = b.berakhir ? new Date(b.berakhir).getTime() : 0;
+      }
+
+      if (typeof valA === "string") {
+        const cmp = String(valA).localeCompare(String(valB));
+        return sortDir === "asc" ? cmp : -cmp;
+      }
+      const cmp = Number(valA) - Number(valB);
+      return sortDir === "asc" ? cmp : -cmp;
+    });
 
   const load = useCallback(async () => {
     try {
@@ -194,12 +220,12 @@ export default function PromoClient() {
         <TableShell>
           <thead>
             <tr>
-              <Th>Kode</Th>
-              <Th>Nama</Th>
-              <Th>Diskon</Th>
-              <Th>Pemakaian</Th>
-              <Th>Berlaku s/d</Th>
-              <Th>Tampil di Website</Th>
+              <Th sortable sortDirection={sortCol === "kode" ? sortDir : null} onSort={() => handleSort("kode")}>Kode</Th>
+              <Th sortable sortDirection={sortCol === "nama" ? sortDir : null} onSort={() => handleSort("nama")}>Nama</Th>
+              <Th sortable sortDirection={sortCol === "nilai" ? sortDir : null} onSort={() => handleSort("nilai")}>Diskon</Th>
+              <Th sortable sortDirection={sortCol === "terpakai" ? sortDir : null} onSort={() => handleSort("terpakai")}>Pemakaian</Th>
+              <Th sortable sortDirection={sortCol === "berakhir" ? sortDir : null} onSort={() => handleSort("berakhir")}>Berlaku s/d</Th>
+              <Th sortable sortDirection={sortCol === "aktif" ? sortDir : null} onSort={() => handleSort("aktif")}>Tampil di Website</Th>
               <Th className="text-right">Aksi</Th>
             </tr>
           </thead>
@@ -231,9 +257,11 @@ export default function PromoClient() {
                 </Td>
                 <Td className="text-right">
                   <div className="flex items-center justify-end gap-1.5">
-                    <RowBtn onClick={() => openEditModal(p)}>Edit</RowBtn>
-                    <RowBtn tone="danger" onClick={() => hapus(p.id)}>
-                      Hapus
+                    <RowBtn onClick={() => openEditModal(p)} title="Edit Promo">
+                      <Pencil size={14} />
+                    </RowBtn>
+                    <RowBtn tone="danger" onClick={() => hapus(p.id)} title="Hapus Promo">
+                      <Trash2 size={14} />
                     </RowBtn>
                   </div>
                 </Td>

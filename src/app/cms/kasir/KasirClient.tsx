@@ -1,12 +1,12 @@
 "use client";
 
-import React, { useEffect, useState, useMemo, useCallback, useDeferredValue, memo } from "react";
+import React, { useEffect, useState, useMemo, useCallback, useDeferredValue, useRef, memo } from "react";
 import { useRouter } from "next/navigation";
 import { Input, Label, useAlert } from "@/components/ui";
 import { rupiah } from "@/lib/utils";
 import {
   Search, ShoppingCart, User, Scissors, Calendar,
-  CreditCard, TicketPercent, CheckCircle, ArrowRight, RefreshCw, Sparkles, Plus, Minus, Trash2, LayoutGrid, List, X, Check
+  CreditCard, TicketPercent, ArrowRight, RefreshCw, Sparkles, Plus, Minus, Trash2, X, Check, Command, BookOpen
 } from "lucide-react";
 
 interface Produk {
@@ -55,133 +55,7 @@ interface BookingActive {
 
 type CartItem = { produk: Produk; karyawanId: string; qty: number };
 
-// --- MEMOIZED COMPONENTS FOR ULTRA FAST 60FPS POS PERFORMANCE ---
-
-const ProductGridCard = memo(function ProductGridCard({
-  p,
-  inCart,
-  qtyInCart,
-  onAddToCart,
-}: {
-  p: Produk;
-  inCart: boolean;
-  qtyInCart: number;
-  onAddToCart: (p: Produk) => void;
-}) {
-  return (
-    <div
-      onClick={() => onAddToCart(p)}
-      className={`group relative flex flex-col justify-between rounded-3xl border p-4 transition-all cursor-pointer ${
-        inCart
-          ? "border-sage-600 bg-sage-50/60 shadow-md ring-2 ring-sage-600/20"
-          : "border-stone-200/80 bg-white hover:border-sage-400 hover:shadow-md"
-      }`}
-    >
-      <div>
-        <div className="flex items-center justify-between gap-2 mb-2">
-          <span className="rounded-full bg-gold-100 px-2.5 py-0.5 text-[10px] font-bold text-gold-700 border border-gold-200">
-            {p.kategori?.nama || "Umum"}
-          </span>
-          <span className="text-[11px] font-semibold text-stone-500">
-            {p.durasiMenit ? `⏱ ${p.durasiMenit} Mnt` : `📦 Stok: ${p.stok}`}
-          </span>
-        </div>
-
-        <h3 className="font-semibold text-stone-900 text-sm group-hover:text-sage-800 transition line-clamp-2">
-          {p.nama}
-        </h3>
-      </div>
-
-      <div className="mt-4 flex items-end justify-between border-t border-stone-100 pt-3">
-        <div>
-          <span className="text-[10px] uppercase font-bold text-stone-400 block">Harga</span>
-          <span className="font-serif-display text-base font-bold text-sage-900">
-            {rupiah(p.harga)}
-          </span>
-        </div>
-
-        <button
-          type="button"
-          onClick={(e) => {
-            e.stopPropagation();
-            onAddToCart(p);
-          }}
-          className={`flex items-center gap-1.5 rounded-xl px-3 py-1.5 text-xs font-bold transition ${
-            inCart
-              ? "bg-sage-900 text-white shadow-sm hover:bg-sage-800"
-              : "bg-stone-100 text-stone-700 group-hover:bg-sage-700 group-hover:text-white"
-          }`}
-        >
-          {inCart ? (
-            <>
-              <CheckCircle size={14} className="text-gold-400" />
-              <span>(x{qtyInCart}) + Tambah</span>
-            </>
-          ) : (
-            <>
-              <Plus size={14} />
-              <span>Tambah</span>
-            </>
-          )}
-        </button>
-      </div>
-    </div>
-  );
-});
-
-const ProductTableRow = memo(function ProductTableRow({
-  p,
-  inCart,
-  qtyInCart,
-  onAddToCart,
-}: {
-  p: Produk;
-  inCart: boolean;
-  qtyInCart: number;
-  onAddToCart: (p: Produk) => void;
-}) {
-  return (
-    <tr
-      onClick={() => onAddToCart(p)}
-      className={`cursor-pointer transition ${
-        inCart ? "bg-sage-50/90 font-medium text-sage-950" : "hover:bg-stone-50 text-stone-800"
-      }`}
-    >
-      <td className="px-4 py-3 font-bold text-stone-900">
-        <div className="flex items-center gap-2">
-          {inCart && <Check size={14} className="text-sage-700 font-bold shrink-0" />}
-          <span>{p.nama}</span>
-        </div>
-      </td>
-      <td className="px-4 py-3">
-        <span className="rounded-full bg-gold-50 px-2 py-0.5 text-[10px] font-bold text-gold-700 border border-gold-200">
-          {p.kategori?.nama ?? "Layanan"}
-        </span>
-      </td>
-      <td className="px-4 py-3 text-stone-500">
-        {p.durasiMenit ? `⏱ ${p.durasiMenit} mnt` : `📦 Stok: ${p.stok}`}
-      </td>
-      <td className="px-4 py-3 text-right font-extrabold text-sage-900">{rupiah(p.harga)}</td>
-      <td className="px-4 py-3 text-center">
-        <button
-          type="button"
-          onClick={(e) => {
-            e.stopPropagation();
-            onAddToCart(p);
-          }}
-          className={`rounded-xl px-3 py-1.5 text-xs font-bold transition ${
-            inCart
-              ? "bg-sage-800 text-white shadow-sm"
-              : "border border-stone-200 bg-white text-stone-700 hover:bg-stone-100"
-          }`}
-        >
-          {inCart ? `(x${qtyInCart}) +` : "+ Tambah"}
-        </button>
-      </td>
-    </tr>
-  );
-});
-
+// --- MEMOIZED CART ITEM ROW ---
 const CartItemRow = memo(function CartItemRow({
   item,
   karyawanList,
@@ -196,19 +70,26 @@ const CartItemRow = memo(function CartItemRow({
   onUpdateItemTherapist: (produkId: string, karyawanId: string) => void;
 }) {
   return (
-    <div className="rounded-2xl border border-stone-200/90 bg-stone-50/80 p-3 text-xs space-y-2.5 transition hover:bg-stone-50">
-      <div className="flex items-start justify-between gap-2">
+    <div className="rounded-2xl border border-stone-200/90 bg-stone-50/80 p-3.5 text-xs space-y-2.5 transition hover:bg-stone-50 shadow-xs">
+      <div className="flex items-start justify-between gap-3">
         <div className="flex-1">
-          <p className="font-bold text-stone-900 text-xs">{item.produk.nama}</p>
-          <p className="text-[11px] text-stone-500 font-medium">{rupiah(item.produk.harga)} / item</p>
+          <div className="flex items-center gap-2">
+            <span className="font-bold text-stone-900 text-xs">{item.produk.nama}</span>
+            <span className="rounded-full bg-gold-50 px-2 py-0.5 text-[9px] font-bold text-gold-700 border border-gold-200">
+              {item.produk.kategori?.nama ?? "Layanan"}
+            </span>
+          </div>
+          <p className="text-[11px] text-stone-500 font-medium mt-0.5">
+            {rupiah(item.produk.harga)} {item.produk.durasiMenit ? `• ⏱ ${item.produk.durasiMenit} mnt` : `• Stok: ${item.produk.stok}`}
+          </p>
         </div>
 
         <div className="flex items-center gap-2">
-          <div className="flex items-center border border-stone-300 rounded-xl bg-white overflow-hidden shadow-sm">
+          <div className="flex items-center border border-stone-300 rounded-xl bg-white overflow-hidden shadow-xs">
             <button
               type="button"
               onClick={() => onUpdateQty(item.produk.id, -1)}
-              className="px-2 py-1 font-bold text-stone-600 hover:bg-stone-100 transition"
+              className="px-2 py-1 font-bold text-stone-600 hover:bg-stone-100 transition cursor-pointer"
             >
               <Minus size={12} />
             </button>
@@ -216,7 +97,7 @@ const CartItemRow = memo(function CartItemRow({
             <button
               type="button"
               onClick={() => onUpdateQty(item.produk.id, 1)}
-              className="px-2 py-1 font-bold text-stone-600 hover:bg-stone-100 transition"
+              className="px-2 py-1 font-bold text-stone-600 hover:bg-stone-100 transition cursor-pointer"
             >
               <Plus size={12} />
             </button>
@@ -225,7 +106,7 @@ const CartItemRow = memo(function CartItemRow({
           <button
             type="button"
             onClick={() => onRemoveFromCart(item.produk.id)}
-            className="rounded-lg p-1 text-stone-400 hover:bg-rose-50 hover:text-rose-600 transition"
+            className="rounded-lg p-1.5 text-stone-400 hover:bg-rose-50 hover:text-rose-600 transition cursor-pointer"
             title="Hapus item"
           >
             <X size={15} />
@@ -239,9 +120,9 @@ const CartItemRow = memo(function CartItemRow({
           <select
             value={item.karyawanId}
             onChange={(e) => onUpdateItemTherapist(item.produk.id, e.target.value)}
-            className="w-full rounded-xl border border-stone-200 bg-white px-2 py-1 text-[11px] font-medium text-stone-800 outline-none focus:border-sage-600"
+            className="w-full rounded-xl border border-stone-200 bg-white px-2 py-1 text-[11px] font-medium text-stone-800 outline-none focus:border-sage-600 cursor-pointer"
           >
-            <option value="">Terapis Bebas / No Pref</option>
+            <option value="">Terapis Bebas / Tanpa Preferensi</option>
             {karyawanList.map((k) => (
               <option key={k.id} value={k.id}>
                 {k.nama} ({k.jabatan})
@@ -262,6 +143,8 @@ export default function KasirClient() {
   const router = useRouter();
   const { toast } = useAlert();
 
+  const searchInputRef = useRef<HTMLInputElement>(null);
+
   const [produkList, setProdukList] = useState<Produk[]>([]);
   const [karyawanList, setKaryawanList] = useState<Karyawan[]>([]);
   const [promoList, setPromoList] = useState<Promo[]>([]);
@@ -269,8 +152,11 @@ export default function KasirClient() {
   const [bookingList, setBookingList] = useState<BookingActive[]>([]);
   const [loading, setLoading] = useState(true);
 
-  // View Mode state: Grid vs List
-  const [viewMode, setViewMode] = useState<"grid" | "table">("grid");
+  // Search State & Autocomplete Focus
+  const [q, setQ] = useState("");
+  const deferredQ = useDeferredValue(q);
+  const [isSearchFocused, setIsSearchFocused] = useState(false);
+  const [showCatalogModal, setShowCatalogModal] = useState(false);
 
   // Cart State (Multi-Item Support)
   const [cart, setCart] = useState<CartItem[]>([]);
@@ -297,11 +183,6 @@ export default function KasirClient() {
   const [diskonManual, setDiskonManual] = useState("0");
   const [submitting, setSubmitting] = useState(false);
   const [err, setErr] = useState("");
-
-  // Search & Filter State
-  const [q, setQ] = useState("");
-  const deferredQ = useDeferredValue(q);
-  const [activeKat, setActiveKat] = useState<string>("semua");
 
   // Load POS data
   const loadData = useCallback(async () => {
@@ -348,6 +229,20 @@ export default function KasirClient() {
     };
   }, []);
 
+  // Global Keyboard Shortcut: '/' or 'Ctrl+K' focuses search input
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if ((e.key === "/" || (e.ctrlKey && e.key === "k")) && document.activeElement !== searchInputRef.current) {
+        if (e.target instanceof HTMLInputElement || e.target instanceof HTMLTextAreaElement) return;
+        e.preventDefault();
+        searchInputRef.current?.focus();
+      }
+    };
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, []);
+
+  // Import online booking
   const importBooking = useCallback(
     (b: BookingActive) => {
       setNama(b.pelanggan.nama);
@@ -384,7 +279,7 @@ export default function KasirClient() {
         }
         return [...prev, { produk: p, karyawanId: selectedKaryawanGlobal, qty: 1 }];
       });
-      toast.success(`${p.nama} ditambahkan`, "Keranjang", 1500);
+      toast.success(`${p.nama} ditambahkan`, "Keranjang", 1200);
     },
     [selectedKaryawanGlobal, toast]
   );
@@ -413,35 +308,31 @@ export default function KasirClient() {
     );
   }, []);
 
-  // Fast Cart Lookup Map
+  // Cart quantity map
   const cartMap = useMemo(() => {
     const map = new Map<string, number>();
     cart.forEach((item) => map.set(item.produk.id, item.qty));
     return map;
   }, [cart]);
 
-  // Filter Categories
-  const categories = useMemo(() => {
-    const set = new Set<string>();
-    produkList.forEach((p) => {
-      if (p.kategori?.nama) set.add(p.kategori.nama);
-    });
-    return Array.from(set);
-  }, [produkList]);
-
-  // Non-blocking Filtered Products via useDeferredValue
-  const filteredProducts = useMemo(() => {
+  // Non-blocking Filtered Products for Search Autocomplete
+  const searchResults = useMemo(() => {
     const query = deferredQ.toLowerCase().trim();
-    if (!query && activeKat === "semua") return produkList;
-    return produkList.filter((p) => {
-      const matchQ =
-        !query ||
-        p.nama.toLowerCase().includes(query) ||
-        (p.kategori?.nama && p.kategori.nama.toLowerCase().includes(query));
-      const matchKat = activeKat === "semua" || p.kategori?.nama === activeKat;
-      return matchQ && matchKat;
-    });
-  }, [produkList, deferredQ, activeKat]);
+    if (!query) return [];
+    return produkList
+      .filter((p) => {
+        return (
+          p.nama.toLowerCase().includes(query) ||
+          (p.kategori?.nama && p.kategori.nama.toLowerCase().includes(query))
+        );
+      })
+      .slice(0, 10); // Limit to top 10 matches for fast response
+  }, [produkList, deferredQ]);
+
+  // Top Popular Services for Quick Add Chips
+  const popularServices = useMemo(() => {
+    return produkList.slice(0, 6);
+  }, [produkList]);
 
   // Customer Loyalty Points Lookup
   const foundPelanggan = useMemo(() => {
@@ -502,6 +393,17 @@ export default function KasirClient() {
   const fillWalkInCustomer = () => {
     setNama("Pelanggan Walk-in");
     setWa("080000000000");
+  };
+
+  // Handle Search Input Enter Press
+  const handleSearchKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (e.key === "Enter") {
+      e.preventDefault();
+      if (searchResults.length > 0) {
+        addToCart(searchResults[0]);
+        setQ("");
+      }
+    }
   };
 
   // Handle Checkout
@@ -583,7 +485,7 @@ export default function KasirClient() {
     return (
       <div className="flex h-96 flex-col items-center justify-center gap-3">
         <RefreshCw size={28} className="animate-spin text-sage-600" />
-        <p className="text-sm font-semibold text-stone-600">Memuat Kasir POS &amp; Katalog Salon...</p>
+        <p className="text-sm font-semibold text-stone-600">Memuat POS Kasir Edelweiss...</p>
       </div>
     );
   }
@@ -592,20 +494,20 @@ export default function KasirClient() {
 
   return (
     <div className="space-y-5">
-      {/* Top POS Control Bar */}
+      {/* Top Control Bar */}
       <div className="flex flex-wrap items-center justify-between gap-4 rounded-3xl border border-stone-200/80 bg-white p-5 shadow-sm">
         <div>
           <div className="flex items-center gap-2">
             <span className="flex h-2.5 w-2.5 rounded-full bg-emerald-500 animate-pulse" />
             <h1 className="font-serif-display text-2xl font-bold text-stone-900">
-              Kasir &amp; POS Checkout
+              Kasir POS Transaksi
             </h1>
             <span className="rounded-full bg-sage-100 px-3 py-0.5 text-xs font-bold text-sage-800 border border-sage-200">
-              Edelweiss POS Live
+              Production Ready
             </span>
           </div>
           <p className="mt-1 text-xs text-stone-500">
-            Katalog perawatan &amp; produk fisik interaktif. Performa cepat 60FPS.
+            Pencarian instan produk &amp; perawatan salon. Tekan <kbd className="rounded bg-stone-100 px-1.5 py-0.5 font-mono text-[10px] border border-stone-300 font-bold">/</kbd> untuk cari cepat.
           </p>
         </div>
 
@@ -619,7 +521,7 @@ export default function KasirClient() {
               onChange={(e) => setSelectedKaryawanGlobal(e.target.value)}
               className="bg-transparent font-bold text-stone-800 outline-none text-xs cursor-pointer"
             >
-              <option value="">Pilih Terapis (Bebas)</option>
+              <option value="">Terapis Bebas / No Pref</option>
               {karyawanList.map((k) => (
                 <option key={k.id} value={k.id}>
                   {k.nama} ({k.jabatan})
@@ -630,193 +532,182 @@ export default function KasirClient() {
 
           <button
             type="button"
+            onClick={() => setShowCatalogModal(true)}
+            className="flex items-center gap-1.5 rounded-2xl border border-stone-200 bg-white px-3.5 py-2 text-xs font-semibold text-stone-700 transition hover:bg-stone-50 cursor-pointer"
+          >
+            <BookOpen size={14} className="text-sage-700" /> Katalog Lengkap
+          </button>
+
+          <button
+            type="button"
             onClick={loadData}
-            className="flex items-center gap-1.5 rounded-2xl border border-stone-200 bg-white px-3.5 py-2 text-xs font-semibold text-stone-600 transition hover:bg-stone-50 hover:text-stone-900 cursor-pointer"
+            className="flex items-center gap-1.5 rounded-2xl border border-stone-200 bg-white px-3.5 py-2 text-xs font-semibold text-stone-600 transition hover:bg-stone-50 cursor-pointer"
           >
             <RefreshCw size={14} /> Refresh
           </button>
         </div>
       </div>
 
-      {/* Main Layout Grid */}
+      {/* Main Workspace Layout */}
       <div className="grid grid-cols-1 gap-6 lg:grid-cols-12">
         
-        {/* LEFT COLUMN: Catalog Filter & Product Grid (7 Cols) */}
-        <div className="space-y-4 lg:col-span-7">
+        {/* LEFT COLUMN: Search & Quick Add Section (7 Cols) */}
+        <div className="space-y-5 lg:col-span-7">
           
-          {/* Search, Category Filter Chips & View Switcher */}
-          <div className="rounded-3xl border border-stone-200/80 bg-white p-4 shadow-sm space-y-3">
-            <div className="flex items-center gap-2">
-              <div className="relative flex-1">
-                <Search size={16} className="absolute left-3.5 top-3 text-stone-400" />
-                <input
-                  type="text"
-                  value={q}
-                  onChange={(e) => setQ(e.target.value)}
-                  placeholder="Cari perawatan salon / produk fisik..."
-                  className="w-full rounded-2xl border border-stone-200 bg-stone-50/60 pl-10 pr-9 py-2.5 text-xs font-medium text-stone-900 transition focus:border-sage-600 focus:bg-white focus:outline-none"
-                />
-                {q && (
-                  <button
-                    type="button"
-                    onClick={() => setQ("")}
-                    className="absolute right-3 top-3 text-stone-400 hover:text-stone-700 cursor-pointer"
-                  >
-                    <X size={14} />
-                  </button>
-                )}
-              </div>
+          {/* SEARCH-ONLY AUTOCOMPLETE COMPONENT */}
+          <div className="relative rounded-3xl border border-sage-200 bg-white p-5 shadow-sm space-y-4">
+            <div className="flex items-center justify-between">
+              <label className="text-xs font-bold uppercase tracking-wider text-sage-900 flex items-center gap-1.5">
+                <Search size={15} className="text-sage-700" /> Cari Perawatan / Produk Salon
+              </label>
+              <span className="text-[11px] text-stone-400 flex items-center gap-1">
+                <Command size={12} /> Tekan <b>/</b>
+              </span>
+            </div>
 
-              {/* View Switcher Toggle */}
-              <div className="flex items-center rounded-2xl border border-stone-200 bg-stone-50 p-1">
+            <div className="relative">
+              <Search size={18} className="absolute left-4 top-3.5 text-sage-600" />
+              <input
+                ref={searchInputRef}
+                type="text"
+                value={q}
+                onFocus={() => setIsSearchFocused(true)}
+                onChange={(e) => {
+                  setQ(e.target.value);
+                  setIsSearchFocused(true);
+                }}
+                onKeyDown={handleSearchKeyDown}
+                placeholder="Ketik nama perawatan (cth: Cut, Creambath, Facial, Nail)..."
+                className="w-full rounded-2xl border-2 border-sage-300 bg-stone-50/50 pl-11 pr-10 py-3 text-sm font-semibold text-stone-900 transition focus:border-sage-700 focus:bg-white focus:outline-none shadow-xs"
+              />
+              {q && (
                 <button
                   type="button"
-                  onClick={() => setViewMode("grid")}
-                  className={`rounded-xl p-2 transition cursor-pointer ${
-                    viewMode === "grid" ? "bg-white text-sage-900 shadow-sm font-bold" : "text-stone-400 hover:text-stone-700"
-                  }`}
-                  title="Tampilan Kartu (Grid)"
+                  onClick={() => setQ("")}
+                  className="absolute right-3.5 top-3.5 text-stone-400 hover:text-stone-700 cursor-pointer"
                 >
-                  <LayoutGrid size={16} />
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setViewMode("table")}
-                  className={`rounded-xl p-2 transition cursor-pointer ${
-                    viewMode === "table" ? "bg-white text-sage-900 shadow-sm font-bold" : "text-stone-400 hover:text-stone-700"
-                  }`}
-                  title="Tampilan Tabel (List)"
-                >
-                  <List size={16} />
-                </button>
-              </div>
-            </div>
-
-            {/* Category Filter Chips */}
-            <div className="flex flex-wrap items-center gap-1.5 pt-1 overflow-x-auto pb-1 no-scrollbar">
-              <button
-                type="button"
-                onClick={() => setActiveKat("semua")}
-                className={`rounded-xl px-3.5 py-1.5 text-xs font-bold transition cursor-pointer ${
-                  activeKat === "semua"
-                    ? "bg-sage-900 text-white shadow-md"
-                    : "bg-stone-100 text-stone-600 hover:bg-stone-200"
-                }`}
-              >
-                Semua ({produkList.length})
-              </button>
-              {categories.map((cat) => (
-                <button
-                  key={cat}
-                  type="button"
-                  onClick={() => setActiveKat(cat)}
-                  className={`rounded-xl px-3.5 py-1.5 text-xs font-bold transition cursor-pointer ${
-                    activeKat === cat
-                      ? "bg-sage-900 text-white shadow-md"
-                      : "bg-stone-100 text-stone-600 hover:bg-stone-200"
-                  }`}
-                >
-                  {cat}
-                </button>
-              ))}
-            </div>
-          </div>
-
-          {/* GRID VIEW MODE */}
-          {viewMode === "grid" && (
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
-              {filteredProducts.map((p) => {
-                const qtyInCart = cartMap.get(p.id) || 0;
-                return (
-                  <ProductGridCard
-                    key={p.id}
-                    p={p}
-                    inCart={qtyInCart > 0}
-                    qtyInCart={qtyInCart}
-                    onAddToCart={addToCart}
-                  />
-                );
-              })}
-            </div>
-          )}
-
-          {/* TABLE VIEW MODE */}
-          {viewMode === "table" && (
-            <div className="overflow-hidden rounded-3xl border border-stone-200 bg-white shadow-sm">
-              <table className="w-full text-left text-xs">
-                <thead className="bg-stone-50 text-stone-500 border-b border-stone-200">
-                  <tr>
-                    <th className="px-4 py-3 font-semibold uppercase">Item</th>
-                    <th className="px-4 py-3 font-semibold uppercase">Kategori</th>
-                    <th className="px-4 py-3 font-semibold uppercase">Durasi / Stok</th>
-                    <th className="px-4 py-3 font-semibold uppercase text-right">Harga</th>
-                    <th className="px-4 py-3 font-semibold uppercase text-center">Aksi</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-stone-100">
-                  {filteredProducts.map((p) => {
-                    const qtyInCart = cartMap.get(p.id) || 0;
-                    return (
-                      <ProductTableRow
-                        key={p.id}
-                        p={p}
-                        inCart={qtyInCart > 0}
-                        qtyInCart={qtyInCart}
-                        onAddToCart={addToCart}
-                      />
-                    );
-                  })}
-                </tbody>
-              </table>
-            </div>
-          )}
-
-          {filteredProducts.length === 0 && (
-            <div className="rounded-3xl border border-stone-200 bg-white p-8 text-center text-xs text-stone-400">
-              Tidak ada item yang cocok dengan kata kunci &quot;{q}&quot;
-            </div>
-          )}
-        </div>
-
-        {/* RIGHT COLUMN: Order Cart & POS Checkout Drawer (5 Cols) */}
-        <div className="lg:col-span-5">
-          <form
-            onSubmit={handleCheckout}
-            className="sticky top-20 rounded-3xl border border-stone-200/90 bg-white p-5 shadow-xl space-y-5"
-          >
-            {/* Cart Drawer Header */}
-            <div className="flex items-center justify-between border-b border-stone-100 pb-3.5">
-              <div className="flex items-center gap-2.5">
-                <div className="rounded-2xl bg-sage-100 p-2 text-sage-800">
-                  <ShoppingCart size={18} />
-                </div>
-                <div>
-                  <h2 className="font-bold text-stone-900 text-base">Keranjang Belanja</h2>
-                  <p className="text-[11px] text-stone-400">{totalCartCount} total barang/layanan</p>
-                </div>
-              </div>
-
-              {cart.length > 0 && (
-                <button
-                  type="button"
-                  onClick={() => setCart([])}
-                  className="flex items-center gap-1 text-[11px] font-semibold text-rose-600 hover:text-rose-800 transition cursor-pointer"
-                  title="Kosongkan Keranjang"
-                >
-                  <Trash2 size={13} /> Reset
+                  <X size={16} />
                 </button>
               )}
             </div>
 
-            {err && (
-              <div className="rounded-2xl bg-red-50 p-3 text-xs font-semibold text-red-700 border border-red-200/80 animate-in fade-in">
-                ⚠️ {err}
+            {/* INSTANT SEARCH AUTOCOMPLETE DROPDOWN */}
+            {isSearchFocused && q.trim().length > 0 && (
+              <div className="rounded-2xl border border-stone-200 bg-white shadow-xl overflow-hidden max-h-80 overflow-y-auto divide-y divide-stone-100 animate-in fade-in slide-in-from-top-2 duration-150">
+                {searchResults.length > 0 ? (
+                  searchResults.map((p, idx) => {
+                    const qtyInCart = cartMap.get(p.id) || 0;
+                    return (
+                      <div
+                        key={p.id}
+                        onClick={() => {
+                          addToCart(p);
+                          setQ("");
+                          setIsSearchFocused(false);
+                        }}
+                        className={`flex items-center justify-between p-3.5 transition cursor-pointer ${
+                          idx === 0 ? "bg-sage-50/60" : "hover:bg-stone-50"
+                        }`}
+                      >
+                        <div className="flex-1 pr-3">
+                          <div className="flex items-center gap-2">
+                            <span className="font-bold text-stone-900 text-xs">{p.nama}</span>
+                            <span className="rounded-full bg-gold-50 px-2 py-0.5 text-[9px] font-bold text-gold-700 border border-gold-200">
+                              {p.kategori?.nama ?? "Umum"}
+                            </span>
+                          </div>
+                          <p className="text-[11px] text-stone-500 mt-0.5">
+                            {p.durasiMenit ? `⏱ ${p.durasiMenit} menit` : `📦 Stok: ${p.stok}`}
+                          </p>
+                        </div>
+
+                        <div className="flex items-center gap-3 shrink-0">
+                          <span className="font-serif-display font-extrabold text-sage-900 text-sm">
+                            {rupiah(p.harga)}
+                          </span>
+                          <button
+                            type="button"
+                            className={`rounded-xl px-3 py-1.5 text-xs font-bold transition flex items-center gap-1 ${
+                              qtyInCart > 0
+                                ? "bg-sage-900 text-white shadow-xs"
+                                : "bg-sage-700 text-white hover:bg-sage-800"
+                            }`}
+                          >
+                            {qtyInCart > 0 ? (
+                              <>
+                                <Check size={13} /> (x{qtyInCart}) +
+                              </>
+                            ) : (
+                              <>
+                                <Plus size={13} /> Tambah
+                              </>
+                            )}
+                          </button>
+                        </div>
+                      </div>
+                    );
+                  })
+                ) : (
+                  <div className="p-6 text-center text-xs text-stone-400 font-medium">
+                    Tidak ada perawatan/produk yang cocok dengan &quot;{q}&quot;
+                  </div>
+                )}
               </div>
             )}
 
-            {/* CART ITEMS LIST */}
+            {/* QUICK FAVORITE SERVICES CHIPS */}
+            <div className="pt-2 border-t border-stone-100">
+              <span className="text-[11px] font-bold text-stone-400 uppercase tracking-wider block mb-2">
+                ⚡ Akses Cepat Perawatan Populer:
+              </span>
+              <div className="flex flex-wrap gap-2">
+                {popularServices.map((p) => {
+                  const qtyInCart = cartMap.get(p.id) || 0;
+                  return (
+                    <button
+                      key={p.id}
+                      type="button"
+                      onClick={() => addToCart(p)}
+                      className={`flex items-center gap-1.5 rounded-2xl border px-3 py-2 text-xs font-semibold transition cursor-pointer ${
+                        qtyInCart > 0
+                          ? "border-sage-600 bg-sage-100 text-sage-950 font-bold shadow-xs"
+                          : "border-stone-200 bg-stone-50/80 text-stone-700 hover:border-sage-400 hover:bg-white"
+                      }`}
+                    >
+                      <span>{p.nama}</span>
+                      <span className="font-bold text-sage-900">({rupiah(p.harga)})</span>
+                      {qtyInCart > 0 && (
+                        <span className="ml-1 rounded-full bg-sage-800 text-white px-1.5 py-0.2 text-[10px] font-extrabold">
+                          x{qtyInCart}
+                        </span>
+                      )}
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+          </div>
+
+          {/* ACTIVE CART ITEMS DISPLAY TABLE / LIST */}
+          <div className="rounded-3xl border border-stone-200/80 bg-white p-5 shadow-sm space-y-4">
+            <div className="flex items-center justify-between border-b border-stone-100 pb-3">
+              <div className="flex items-center gap-2">
+                <ShoppingCart size={18} className="text-sage-700" />
+                <h2 className="font-bold text-stone-900 text-base">Item Dalam Keranjang ({cart.length})</h2>
+              </div>
+              {cart.length > 0 && (
+                <button
+                  type="button"
+                  onClick={() => setCart([])}
+                  className="flex items-center gap-1 text-xs font-semibold text-rose-600 hover:text-rose-800 transition cursor-pointer"
+                >
+                  <Trash2 size={13} /> Kosongkan Keranjang
+                </button>
+              )}
+            </div>
+
             {cart.length > 0 ? (
-              <div className="space-y-3 max-h-64 overflow-y-auto pr-1">
+              <div className="space-y-3 max-h-96 overflow-y-auto pr-1">
                 {cart.map((item) => (
                   <CartItemRow
                     key={item.produk.id}
@@ -829,10 +720,37 @@ export default function KasirClient() {
                 ))}
               </div>
             ) : (
-              <div className="rounded-2xl border border-dashed border-amber-300 bg-amber-50/70 p-5 text-center text-xs text-amber-800 font-medium space-y-1">
-                <ShoppingCart size={24} className="mx-auto text-amber-600 opacity-80 mb-1" />
-                <p className="font-bold">Keranjang masih kosong</p>
-                <p className="text-[11px] text-amber-700">Pilih perawatan atau produk dari katalog di sebelah kiri.</p>
+              <div className="rounded-2xl border border-dashed border-stone-200 bg-stone-50/60 p-8 text-center text-xs text-stone-400 font-medium space-y-2">
+                <Search size={28} className="mx-auto text-stone-300" />
+                <p className="font-bold text-stone-600">Keranjang masih kosong</p>
+                <p className="text-[11px] text-stone-400">
+                  Gunakan kolom pencarian di atas atau tombol akses cepat untuk memasukkan perawatan.
+                </p>
+              </div>
+            )}
+          </div>
+        </div>
+
+        {/* RIGHT COLUMN: Customer Details, Discounts & Checkout Drawer (5 Cols) */}
+        <div className="lg:col-span-5">
+          <form
+            onSubmit={handleCheckout}
+            className="sticky top-20 rounded-3xl border border-stone-200/90 bg-white p-5 shadow-xl space-y-5"
+          >
+            {/* Drawer Title */}
+            <div className="flex items-center justify-between border-b border-stone-100 pb-3.5">
+              <div>
+                <h2 className="font-bold text-stone-900 text-base">Rincian Pelanggan &amp; Pembayaran</h2>
+                <p className="text-[11px] text-stone-400">{totalCartCount} item terpilih</p>
+              </div>
+              <span className="rounded-full bg-gold-100 px-3 py-1 text-xs font-bold text-gold-800 border border-gold-200">
+                POS Kasir
+              </span>
+            </div>
+
+            {err && (
+              <div className="rounded-2xl bg-red-50 p-3 text-xs font-semibold text-red-700 border border-red-200/80 animate-in fade-in">
+                ⚠️ {err}
               </div>
             )}
 
@@ -863,7 +781,7 @@ export default function KasirClient() {
             )}
 
             {/* CUSTOMER INFORMATION */}
-            <div className="space-y-3 pt-2 border-t border-stone-100">
+            <div className="space-y-3">
               <div className="flex items-center justify-between">
                 <Label className="flex items-center gap-1 text-xs font-bold text-stone-800">
                   <User size={13} className="text-sage-700" /> Pelanggan *
@@ -961,7 +879,7 @@ export default function KasirClient() {
                   onClick={() => setPaymentMode("SINGLE")}
                   className={`rounded-xl py-2 text-[11px] font-bold transition cursor-pointer ${
                     paymentMode === "SINGLE"
-                      ? "bg-white text-sage-900 shadow-sm"
+                      ? "bg-white text-sage-900 shadow-xs"
                       : "text-stone-500 hover:text-stone-800"
                   }`}
                 >
@@ -977,7 +895,7 @@ export default function KasirClient() {
                   }}
                   className={`rounded-xl py-2 text-[11px] font-bold transition cursor-pointer ${
                     paymentMode === "SPLIT"
-                      ? "bg-white text-sage-900 shadow-sm"
+                      ? "bg-white text-sage-900 shadow-xs"
                       : "text-stone-500 hover:text-stone-800"
                   }`}
                 >
@@ -988,7 +906,7 @@ export default function KasirClient() {
                   onClick={() => setPaymentMode("DP")}
                   className={`rounded-xl py-2 text-[11px] font-bold transition cursor-pointer ${
                     paymentMode === "DP"
-                      ? "bg-white text-sage-900 shadow-sm"
+                      ? "bg-white text-sage-900 shadow-xs"
                       : "text-stone-500 hover:text-stone-800"
                   }`}
                 >
@@ -1098,7 +1016,7 @@ export default function KasirClient() {
                         onClick={() => setMetodeBayar(method)}
                         className={`rounded-xl py-1.5 text-[11px] font-bold border transition cursor-pointer ${
                           metodeBayar === method
-                            ? "border-amber-600 bg-amber-700 text-white shadow-sm"
+                            ? "border-amber-600 bg-amber-700 text-white shadow-xs"
                             : "border-stone-200 bg-white text-stone-700 hover:bg-stone-100"
                         }`}
                       >
@@ -1200,6 +1118,76 @@ export default function KasirClient() {
           </form>
         </div>
       </div>
+
+      {/* OPTIONAL FULL CATALOG MODAL */}
+      {showCatalogModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-stone-900/60 p-4 backdrop-blur-xs">
+          <div className="relative w-full max-w-3xl max-h-[85vh] overflow-hidden rounded-3xl bg-white p-6 shadow-2xl flex flex-col space-y-4">
+            <div className="flex items-center justify-between border-b border-stone-100 pb-3">
+              <div>
+                <h3 className="font-bold text-stone-900 text-lg">Katalog Lengkap Perawatan &amp; Produk</h3>
+                <p className="text-xs text-stone-500">Klik item untuk menambahkannya ke keranjang kasir.</p>
+              </div>
+              <button
+                type="button"
+                onClick={() => setShowCatalogModal(false)}
+                className="rounded-full p-2 text-stone-400 hover:bg-stone-100 hover:text-stone-700 cursor-pointer"
+              >
+                <X size={20} />
+              </button>
+            </div>
+
+            <div className="overflow-y-auto flex-1 pr-1 space-y-3">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                {produkList.map((p) => {
+                  const qtyInCart = cartMap.get(p.id) || 0;
+                  return (
+                    <div
+                      key={p.id}
+                      onClick={() => {
+                        addToCart(p);
+                        toast.success(`${p.nama} ditambahkan ke keranjang`, "Kasir POS", 1200);
+                      }}
+                      className={`flex items-center justify-between p-3 rounded-2xl border transition cursor-pointer ${
+                        qtyInCart > 0
+                          ? "border-sage-600 bg-sage-50/70"
+                          : "border-stone-200 bg-white hover:border-sage-400 hover:shadow-xs"
+                      }`}
+                    >
+                      <div>
+                        <span className="text-[10px] font-bold text-gold-700 bg-gold-50 px-2 py-0.5 rounded-full border border-gold-200">
+                          {p.kategori?.nama ?? "Umum"}
+                        </span>
+                        <p className="font-bold text-stone-900 text-xs mt-1">{p.nama}</p>
+                        <p className="text-[11px] text-stone-500">{rupiah(p.harga)}</p>
+                      </div>
+
+                      <button
+                        type="button"
+                        className={`rounded-xl px-3 py-1.5 text-xs font-bold transition flex items-center gap-1 ${
+                          qtyInCart > 0 ? "bg-sage-900 text-white" : "bg-stone-100 text-stone-700 hover:bg-sage-700 hover:text-white"
+                        }`}
+                      >
+                        {qtyInCart > 0 ? `(x${qtyInCart}) +` : "+ Tambah"}
+                      </button>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+
+            <div className="border-t border-stone-100 pt-3 flex justify-end">
+              <button
+                type="button"
+                onClick={() => setShowCatalogModal(false)}
+                className="rounded-2xl bg-sage-900 px-6 py-2.5 text-xs font-bold text-white hover:bg-sage-800 cursor-pointer"
+              >
+                Selesai
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

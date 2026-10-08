@@ -331,9 +331,10 @@ export default function LokasiClient() {
                     {!item.utama && (
                       <button
                         onClick={() => handleSetUtama(item)}
-                        className="rounded-xl border border-stone-200 bg-white px-3 py-1.5 font-semibold text-stone-700 hover:bg-stone-50 cursor-pointer"
+                        className="rounded-xl border border-gold-300 bg-gold-50 p-2 text-gold-800 hover:bg-gold-100 transition cursor-pointer"
+                        title="Jadikan Lokasi Utama"
                       >
-                        Jadikan Utama
+                        <CheckCircle2 size={15} />
                       </button>
                     )}
                     <button

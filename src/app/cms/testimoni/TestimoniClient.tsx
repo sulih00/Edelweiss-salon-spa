@@ -2,7 +2,7 @@
 import { useEffect, useState, useCallback } from "react";
 import { Input, Label, Btn, useAlert } from "@/components/ui";
 import { Modal, PageHeader, AddButton, TableShell, Th, Td, RowBtn, Empty, Switch, FilterTabs } from "@/components/admin";
-import { Star } from "lucide-react";
+import { Star, Trash2 } from "lucide-react";
 
 type T = { id: string; nama: string; isi: string; rating: number; tampil: boolean };
 
@@ -103,7 +103,9 @@ export default function TestimoniClient() {
                   </div>
                 </Td>
                 <Td className="text-right">
-                  <RowBtn tone="danger" onClick={() => hapus(t.id)}>Hapus</RowBtn>
+                  <RowBtn tone="danger" onClick={() => hapus(t.id)} title="Hapus Testimoni">
+                    <Trash2 size={14} />
+                  </RowBtn>
                 </Td>
               </tr>
             ))}

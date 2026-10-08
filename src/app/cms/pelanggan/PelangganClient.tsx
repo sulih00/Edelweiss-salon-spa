@@ -31,14 +31,46 @@ export default function PelangganClient({ data }: { data: PelangganWithHistory[]
   const [page, setPage] = useState(1);
   const pageSize = 10;
 
+  const [sortCol, setSortCol] = useState<string>("nama");
+  const [sortDir, setSortDir] = useState<"asc" | "desc">("asc");
+
+  const handleSort = (col: string) => {
+    if (sortCol === col) {
+      setSortDir(sortDir === "asc" ? "desc" : "asc");
+    } else {
+      setSortCol(col);
+      setSortDir("asc");
+    }
+  };
+
   const filtered = useMemo(() => {
-    return data.filter(
+    const result = data.filter(
       (p) =>
         p.nama.toLowerCase().includes(q.toLowerCase()) ||
         p.wa.includes(q) ||
         (p.alamat && p.alamat.toLowerCase().includes(q.toLowerCase()))
     );
-  }, [data, q]);
+
+    return result.sort((a, b) => {
+      let valA: string | number = (a[sortCol as keyof PelangganWithHistory] ?? "") as string | number;
+      let valB: string | number = (b[sortCol as keyof PelangganWithHistory] ?? "") as string | number;
+
+      if (sortCol === "bookings") {
+        valA = a.bookings.length;
+        valB = b.bookings.length;
+      } else if (sortCol === "spend") {
+        valA = a.bookings.filter(b => b.status === "SELESAI").reduce((sum, b) => sum + Math.max(0, b.produk.harga - (b.diskon ?? 0)), 0);
+        valB = b.bookings.filter(b => b.status === "SELESAI").reduce((sum, b) => sum + Math.max(0, b.produk.harga - (b.diskon ?? 0)), 0);
+      }
+
+      if (typeof valA === "string") {
+        const cmp = String(valA).localeCompare(String(valB));
+        return sortDir === "asc" ? cmp : -cmp;
+      }
+      const cmp = Number(valA) - Number(valB);
+      return sortDir === "asc" ? cmp : -cmp;
+    });
+  }, [data, q, sortCol, sortDir]);
 
   const totalPages = Math.ceil(filtered.length / pageSize);
   const paginated = useMemo(() => {
@@ -143,11 +175,11 @@ export default function PelangganClient({ data }: { data: PelangganWithHistory[]
           <TableShell>
             <thead>
               <tr>
-                <Th>Pelanggan</Th>
-                <Th>WhatsApp</Th>
-                <Th>Poin Loyalitas</Th>
-                <Th>Total Booking</Th>
-                <Th className="text-right">Total Belanja (Spend)</Th>
+                <Th sortable sortDirection={sortCol === "nama" ? sortDir : null} onSort={() => handleSort("nama")}>Pelanggan</Th>
+                <Th sortable sortDirection={sortCol === "wa" ? sortDir : null} onSort={() => handleSort("wa")}>WhatsApp</Th>
+                <Th sortable sortDirection={sortCol === "poin" ? sortDir : null} onSort={() => handleSort("poin")}>Poin Loyalitas</Th>
+                <Th sortable sortDirection={sortCol === "bookings" ? sortDir : null} onSort={() => handleSort("bookings")}>Total Booking</Th>
+                <Th sortable sortDirection={sortCol === "spend" ? sortDir : null} onSort={() => handleSort("spend")} className="text-right">Total Belanja (Spend)</Th>
                 <Th className="text-right">Aksi</Th>
               </tr>
             </thead>
@@ -187,9 +219,10 @@ export default function PelangganClient({ data }: { data: PelangganWithHistory[]
                       <button
                         type="button"
                         onClick={() => setSelectedCustomer(p)}
-                        className="rounded-xl border border-stone-200 bg-white px-3 py-1.5 text-xs font-semibold text-stone-700 hover:border-sage-600 hover:text-sage-700"
+                        title="Riwayat Treatment & Detail Pelanggan"
+                        className="inline-flex items-center justify-center rounded-xl border border-stone-200 bg-white p-2 text-stone-700 hover:border-sage-600 hover:text-sage-700 transition cursor-pointer active:scale-95"
                       >
-                        <History size={13} className="mr-1 inline-block" /> Riwayat Treatment
+                        <History size={15} />
                       </button>
                     </Td>
                   </tr>

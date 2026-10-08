@@ -59,43 +59,42 @@ function CustomAreaTooltip({ active, payload, label }: { active?: boolean; paylo
 }
 
 export default function DashboardCharts({ daily, byStatus, top, paymentData = [] }: DashboardChartsProps) {
-
   const totalOmzetPeriod = daily.reduce((acc, d) => acc + d.masuk, 0);
   const totalKeluarPeriod = daily.reduce((acc, d) => acc + d.keluar, 0);
 
   return (
-    <div className="mt-5 space-y-5">
+    <div className="mt-4 space-y-4">
       {/* 1. Main Cash Flow Chart Header & Area Chart */}
-      <div className="rounded-3xl border border-stone-200 bg-white p-6 shadow-sm">
-        <div className="flex flex-wrap items-center justify-between gap-4 mb-4">
+      <div className="rounded-3xl border border-stone-200 bg-white p-5 shadow-xs">
+        <div className="flex flex-wrap items-center justify-between gap-3 mb-3">
           <div>
             <div className="flex items-center gap-2">
-              <TrendingUp size={20} className="text-sage-700" />
-              <h2 className="font-serif-display text-xl font-bold text-stone-900">
-                Grafik Arus Kas &amp; Omzet Salon
+              <TrendingUp size={18} className="text-sage-700" />
+              <h2 className="font-serif-display text-lg font-bold text-stone-900">
+                Arus Kas &amp; Omzet 14 Hari
               </h2>
             </div>
             <p className="text-xs text-stone-500">
-              Perbandingan pendapatan kas masuk vs pengeluaran operasional.
+              Perbandingan kas masuk vs pengeluaran operasional.
             </p>
           </div>
 
           {/* Quick Metrics Pills */}
-          <div className="flex items-center gap-2">
-            <div className="rounded-2xl bg-emerald-50 px-3.5 py-1.5 border border-emerald-200/80 text-xs">
-              <span className="text-stone-500 font-medium">Total Masuk: </span>
-              <b className="text-emerald-800 font-bold">{rupiah(totalOmzetPeriod)}</b>
+          <div className="flex items-center gap-2 text-xs">
+            <div className="rounded-xl bg-emerald-50 px-3 py-1 border border-emerald-200/80">
+              <span className="text-stone-500">Masuk: </span>
+              <b className="text-emerald-800">{rupiah(totalOmzetPeriod)}</b>
             </div>
-            <div className="rounded-2xl bg-rose-50 px-3.5 py-1.5 border border-rose-200/80 text-xs">
-              <span className="text-stone-500 font-medium">Total Keluar: </span>
-              <b className="text-rose-700 font-bold">{rupiah(totalKeluarPeriod)}</b>
+            <div className="rounded-xl bg-rose-50 px-3 py-1 border border-rose-200/80">
+              <span className="text-stone-500">Keluar: </span>
+              <b className="text-rose-700">{rupiah(totalKeluarPeriod)}</b>
             </div>
           </div>
         </div>
 
-        <div className="h-72 w-full pt-2">
+        <div className="h-56 w-full pt-1">
           <ResponsiveContainer width="100%" height="100%">
-            <AreaChart data={daily} margin={{ top: 10, right: 10, left: 0, bottom: 0 }}>
+            <AreaChart data={daily} margin={{ top: 5, right: 10, left: 0, bottom: 0 }}>
               <defs>
                 <linearGradient id="colorMasuk" x1="0" y1="0" x2="0" y2="1">
                   <stop offset="5%" stopColor="#16a34a" stopOpacity={0.35} />
@@ -106,29 +105,29 @@ export default function DashboardCharts({ daily, byStatus, top, paymentData = []
                   <stop offset="95%" stopColor="#dc2626" stopOpacity={0.0} />
                 </linearGradient>
               </defs>
-              <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
-              <XAxis dataKey="tgl" tick={{ fontSize: 11, fill: "#78716c" }} interval={1} />
+              <CartesianGrid strokeDasharray="3 3" stroke="#f5f5f4" />
+              <XAxis dataKey="tgl" tick={{ fontSize: 10, fill: "#78716c" }} interval={1} />
               <YAxis
-                tick={{ fontSize: 11, fill: "#78716c" }}
+                tick={{ fontSize: 10, fill: "#78716c" }}
                 tickFormatter={(v: number) => (v >= 1000000 ? `${v / 1000000}jt` : `${v / 1000}rb`)}
-                width={50}
+                width={45}
               />
               <Tooltip content={<CustomAreaTooltip />} />
-              <Legend verticalAlign="top" height={36} wrapperStyle={{ fontSize: "12px", fontWeight: "600" }} />
+              <Legend verticalAlign="top" height={28} wrapperStyle={{ fontSize: "11px", fontWeight: "600" }} />
               <Area
                 type="monotone"
                 dataKey="masuk"
-                name="Kas Masuk (Omzet)"
+                name="Kas Masuk"
                 stroke="#16a34a"
-                strokeWidth={3}
+                strokeWidth={2.5}
                 fill="url(#colorMasuk)"
               />
               <Area
                 type="monotone"
                 dataKey="keluar"
-                name="Kas Keluar (Operasional)"
+                name="Kas Keluar"
                 stroke="#dc2626"
-                strokeWidth={2.5}
+                strokeWidth={2}
                 fill="url(#colorKeluar)"
               />
             </AreaChart>
@@ -136,23 +135,23 @@ export default function DashboardCharts({ daily, byStatus, top, paymentData = []
         </div>
       </div>
 
-      {/* 2. Grid 2 Columns: Payment Breakdown & Status Distribution */}
-      <div className="grid grid-cols-1 gap-5 lg:grid-cols-2">
+      {/* 2. Grid 3 Columns: Payment Breakdown, Status Distribution & Top Services */}
+      <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3">
         {/* Payment Methods Donut Chart */}
-        <div className="rounded-3xl border border-stone-200 bg-white p-6 shadow-sm flex flex-col justify-between">
+        <div className="rounded-3xl border border-stone-200 bg-white p-4 shadow-xs flex flex-col justify-between">
           <div>
             <div className="flex items-center gap-2 mb-1">
-              <PieIcon size={18} className="text-sage-700" />
-              <h2 className="font-serif-display text-lg font-bold text-stone-900">
-                Kontribusi Metode Pembayaran
+              <PieIcon size={16} className="text-sage-700" />
+              <h2 className="font-serif-display text-base font-bold text-stone-900">
+                Metode Pembayaran
               </h2>
             </div>
-            <p className="text-xs text-stone-500">
-              Distribusi omzet kasir berdasarkan metode transaksi (Tunai, QRIS, Transfer, Debit).
+            <p className="text-[11px] text-stone-500">
+              Distribusi omzet per channel
             </p>
           </div>
 
-          <div className="mt-4 h-60 w-full flex items-center justify-center">
+          <div className="mt-2 h-48 w-full flex items-center justify-center">
             {paymentData.length > 0 ? (
               <ResponsiveContainer width="100%" height="100%">
                 <PieChart>
@@ -160,10 +159,10 @@ export default function DashboardCharts({ daily, byStatus, top, paymentData = []
                     data={paymentData}
                     dataKey="total"
                     nameKey="metode"
-                    innerRadius={55}
-                    outerRadius={85}
-                    paddingAngle={4}
-                    cornerRadius={6}
+                    innerRadius={42}
+                    outerRadius={68}
+                    paddingAngle={3}
+                    cornerRadius={5}
                   >
                     {paymentData.map((p) => (
                       <Cell key={p.metode} fill={PAYMENT_COLORS[p.metode] ?? "#6b7280"} />
@@ -171,32 +170,32 @@ export default function DashboardCharts({ daily, byStatus, top, paymentData = []
                   </Pie>
                   <Tooltip
                     formatter={(v, name) => [rupiah(Number(v)), `Metode ${name}`]}
-                    contentStyle={{ borderRadius: "16px", border: "1px solid #e7e5e4", fontSize: "12px", fontWeight: "bold" }}
+                    contentStyle={{ borderRadius: "12px", border: "1px solid #e7e5e4", fontSize: "11px", fontWeight: "bold" }}
                   />
-                  <Legend verticalAlign="bottom" height={36} wrapperStyle={{ fontSize: "11px", fontWeight: "600" }} />
+                  <Legend verticalAlign="bottom" height={28} wrapperStyle={{ fontSize: "10px", fontWeight: "600" }} />
                 </PieChart>
               </ResponsiveContainer>
             ) : (
-              <p className="text-xs text-stone-400">Belum ada data pembayaran POS terproses.</p>
+              <p className="text-xs text-stone-400">Belum ada transaksi POS.</p>
             )}
           </div>
         </div>
 
         {/* Booking Status Distribution Donut Chart */}
-        <div className="rounded-3xl border border-stone-200 bg-white p-6 shadow-sm flex flex-col justify-between">
+        <div className="rounded-3xl border border-stone-200 bg-white p-4 shadow-xs flex flex-col justify-between">
           <div>
             <div className="flex items-center gap-2 mb-1">
-              <BarChart3 size={18} className="text-sage-700" />
-              <h2 className="font-serif-display text-lg font-bold text-stone-900">
-                Distribusi Status Booking
+              <BarChart3 size={16} className="text-sage-700" />
+              <h2 className="font-serif-display text-base font-bold text-stone-900">
+                Status Booking
               </h2>
             </div>
-            <p className="text-xs text-stone-500">
-              Persentase booking Selesai, Baru, Dikonfirmasi, dan Batal.
+            <p className="text-[11px] text-stone-500">
+              Perbandingan 30 hari terakhir
             </p>
           </div>
 
-          <div className="mt-4 h-60 w-full flex items-center justify-center">
+          <div className="mt-2 h-48 w-full flex items-center justify-center">
             {byStatus.length > 0 ? (
               <ResponsiveContainer width="100%" height="100%">
                 <PieChart>
@@ -204,10 +203,10 @@ export default function DashboardCharts({ daily, byStatus, top, paymentData = []
                     data={byStatus}
                     dataKey="jumlah"
                     nameKey="status"
-                    innerRadius={55}
-                    outerRadius={85}
-                    paddingAngle={4}
-                    cornerRadius={6}
+                    innerRadius={42}
+                    outerRadius={68}
+                    paddingAngle={3}
+                    cornerRadius={5}
                   >
                     {byStatus.map((s) => (
                       <Cell key={s.status} fill={STATUS_COLORS[s.status] ?? "#78716c"} />
@@ -215,47 +214,45 @@ export default function DashboardCharts({ daily, byStatus, top, paymentData = []
                   </Pie>
                   <Tooltip
                     formatter={(v) => [`${v} Booking`, "Jumlah"]}
-                    contentStyle={{ borderRadius: "16px", border: "1px solid #e7e5e4", fontSize: "12px", fontWeight: "bold" }}
+                    contentStyle={{ borderRadius: "12px", border: "1px solid #e7e5e4", fontSize: "11px", fontWeight: "bold" }}
                   />
-                  <Legend verticalAlign="bottom" height={36} wrapperStyle={{ fontSize: "11px", fontWeight: "600" }} />
+                  <Legend verticalAlign="bottom" height={28} wrapperStyle={{ fontSize: "10px", fontWeight: "600" }} />
                 </PieChart>
               </ResponsiveContainer>
             ) : (
-              <p className="text-xs text-stone-400">Belum ada booking terdaftar.</p>
+              <p className="text-xs text-stone-400">Belum ada booking.</p>
             )}
           </div>
         </div>
-      </div>
 
-      {/* 3. Top Perawatan & Produk Terlaris Horizontal Bar Chart */}
-      <div className="rounded-3xl border border-stone-200 bg-white p-6 shadow-sm">
-        <div className="flex items-center justify-between gap-4 mb-3">
+        {/* Top Perawatan & Produk Terlaris Horizontal Bar Chart */}
+        <div className="rounded-3xl border border-stone-200 bg-white p-4 shadow-xs md:col-span-2 lg:col-span-1 flex flex-col justify-between">
           <div>
-            <div className="flex items-center gap-2">
-              <Award size={20} className="text-gold-500" />
-              <h2 className="font-serif-display text-lg font-bold text-stone-900">
-                Layanan &amp; Perawatan Terfavorit
+            <div className="flex items-center gap-2 mb-1">
+              <Award size={16} className="text-gold-500" />
+              <h2 className="font-serif-display text-base font-bold text-stone-900">
+                Layanan Terfavorit
               </h2>
             </div>
-            <p className="text-xs text-stone-500">
-              Top 5 perawatan salon dengan volume transaksi terbanyak.
+            <p className="text-[11px] text-stone-500">
+              Top 5 perawatan paling banyak di-booking
             </p>
           </div>
-        </div>
 
-        <div className="h-64 w-full pt-2">
-          <ResponsiveContainer width="100%" height="100%">
-            <BarChart data={top} layout="vertical" margin={{ top: 5, right: 30, left: 30, bottom: 0 }}>
-              <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
-              <XAxis type="number" tick={{ fontSize: 11, fill: "#78716c" }} allowDecimals={false} />
-              <YAxis type="category" dataKey="layanan" tick={{ fontSize: 12, fill: "#1c1917", fontWeight: "600" }} width={160} />
-              <Tooltip
-                formatter={(v) => [`${v} Treatment`, "Total Treatment"]}
-                contentStyle={{ borderRadius: "16px", border: "1px solid #e7e5e4", fontSize: "12px", fontWeight: "bold" }}
-              />
-              <Bar dataKey="jumlah" name="Total Treatment" fill="#466046" radius={[0, 10, 10, 0]} barSize={24} />
-            </BarChart>
-          </ResponsiveContainer>
+          <div className="mt-2 h-48 w-full pt-1">
+            <ResponsiveContainer width="100%" height="100%">
+              <BarChart data={top} layout="vertical" margin={{ top: 0, right: 15, left: 10, bottom: 0 }}>
+                <CartesianGrid strokeDasharray="3 3" stroke="#f5f5f4" />
+                <XAxis type="number" tick={{ fontSize: 10, fill: "#78716c" }} allowDecimals={false} />
+                <YAxis type="category" dataKey="layanan" tick={{ fontSize: 10, fill: "#1c1917", fontWeight: "600" }} width={100} />
+                <Tooltip
+                  formatter={(v) => [`${v} Treatment`, "Total"]}
+                  contentStyle={{ borderRadius: "12px", border: "1px solid #e7e5e4", fontSize: "11px", fontWeight: "bold" }}
+                />
+                <Bar dataKey="jumlah" name="Total" fill="#466046" radius={[0, 8, 8, 0]} barSize={18} />
+              </BarChart>
+            </ResponsiveContainer>
+          </div>
         </div>
       </div>
     </div>

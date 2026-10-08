@@ -37,6 +37,7 @@ model User {
   transaksi    TransaksiKeuangan[] @relation("DibuatOleh")
 
   @@index([role])
+  @@index([createdAt])
 }
 
 model Karyawan {
@@ -50,6 +51,7 @@ model Karyawan {
   bookings  Booking[]
 
   @@index([aktif])
+  @@index([nama])
 }
 
 model KategoriProduk {
@@ -76,6 +78,8 @@ model Produk {
 
   @@index([kategoriId])
   @@index([aktif, isLayanan])
+  @@index([nama])
+  @@index([isLayanan])
 }
 
 model Pelanggan {
@@ -88,6 +92,8 @@ model Pelanggan {
   bookings  Booking[]
 
   @@index([wa])
+  @@index([nama])
+  @@index([createdAt])
 }
 
 enum TipeDiskon {
@@ -120,6 +126,10 @@ model Booking {
   @@index([status, jadwal])
   @@index([pelangganId])
   @@index([produkId])
+  @@index([karyawanId])
+  @@index([promoId])
+  @@index([jadwal])
+  @@index([createdAt])
 }
 
 model Promo {
@@ -140,6 +150,7 @@ model Promo {
   bookings    Booking[]
 
   @@index([aktif, mulai, berakhir])
+  @@index([createdAt])
 }
 
 model TransaksiKeuangan {
@@ -160,6 +171,9 @@ model TransaksiKeuangan {
   @@index([tanggal])
   @@index([tipe, tanggal])
   @@index([bookingId])
+  @@index([dibuatOlehId])
+  @@index([kategori])
+  @@index([createdAt])
 }
 
 model Rekening {
@@ -172,6 +186,7 @@ model Rekening {
   createdAt DateTime @default(now())
 
   @@index([aktif])
+  @@index([aktif, urutan])
 }
 
 model Galeri {
@@ -203,5 +218,7 @@ model Lokasi {
   utama     Boolean  @default(true)
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+
+  @@index([utama])
 }
 

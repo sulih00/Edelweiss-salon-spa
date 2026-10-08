@@ -2,6 +2,7 @@
 import { useEffect, useState, useCallback, useMemo } from "react";
 import { Input, Label, Btn, useAlert } from "@/components/ui";
 import { Modal, PageHeader, AddButton, TableShell, Th, Td, Badge, RowBtn, Empty, Pagination } from "@/components/admin";
+import { Pencil, Trash2 } from "lucide-react";
 
 type U = { id: string; name: string; email: string; role: string };
 
@@ -18,10 +19,27 @@ export default function UsersClient() {
   const [page, setPage] = useState(1);
   const pageSize = 10;
 
-  const totalPages = Math.ceil(data.length / pageSize);
+  const [sortCol, setSortCol] = useState<string>("name");
+  const [sortDir, setSortDir] = useState<"asc" | "desc">("asc");
+
+  const handleSort = (col: string) => {
+    if (sortCol === col) setSortDir(sortDir === "asc" ? "desc" : "asc");
+    else { setSortCol(col); setSortDir("asc"); }
+  };
+
+  const sortedData = useMemo(() => {
+    return [...data].sort((a, b) => {
+      const valA = (a[sortCol as keyof U] || "").toString();
+      const valB = (b[sortCol as keyof U] || "").toString();
+      const cmp = valA.localeCompare(valB);
+      return sortDir === "asc" ? cmp : -cmp;
+    });
+  }, [data, sortCol, sortDir]);
+
+  const totalPages = Math.ceil(sortedData.length / pageSize);
   const paginated = useMemo(() => {
-    return data.slice((page - 1) * pageSize, page * pageSize);
-  }, [data, page, pageSize]);
+    return sortedData.slice((page - 1) * pageSize, page * pageSize);
+  }, [sortedData, page, pageSize]);
 
   const load = useCallback(async () => {
     try {
@@ -139,9 +157,9 @@ export default function UsersClient() {
           <TableShell>
             <thead>
               <tr>
-                <Th>Nama</Th>
-                <Th>Email</Th>
-                <Th>Role</Th>
+                <Th sortable sortDirection={sortCol === "name" ? sortDir : null} onSort={() => handleSort("name")}>Nama</Th>
+                <Th sortable sortDirection={sortCol === "email" ? sortDir : null} onSort={() => handleSort("email")}>Email</Th>
+                <Th sortable sortDirection={sortCol === "role" ? sortDir : null} onSort={() => handleSort("role")}>Role</Th>
                 <Th className="text-right">Aksi</Th>
               </tr>
             </thead>
@@ -162,9 +180,11 @@ export default function UsersClient() {
                   </Td>
                   <Td className="text-right">
                     <div className="flex items-center justify-end gap-1.5">
-                      <RowBtn onClick={() => openEditModal(u)}>Edit</RowBtn>
-                      <RowBtn tone="danger" onClick={() => hapus(u.id)}>
-                        Hapus
+                      <RowBtn onClick={() => openEditModal(u)} title="Edit User">
+                        <Pencil size={14} />
+                      </RowBtn>
+                      <RowBtn tone="danger" onClick={() => hapus(u.id)} title="Hapus User">
+                        <Trash2 size={14} />
                       </RowBtn>
                     </div>
                   </Td>

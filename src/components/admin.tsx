@@ -1,7 +1,7 @@
 "use client";
 import { useEffect } from "react";
 import Link from "next/link";
-import { X, Plus, Inbox, ChevronRight, Home } from "lucide-react";
+import { X, Plus, Inbox, ChevronRight, Home, ArrowUp, ArrowDown, ArrowUpDown } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 /* ---------- Component Breadcrumb Admin ---------- */
@@ -167,10 +167,43 @@ export function TableShell({ children }: { children: React.ReactNode }) {
   );
 }
 
-export function Th({ children, className }: { children?: React.ReactNode; className?: string }) {
+export function Th({
+  children,
+  className,
+  sortable = false,
+  sortDirection,
+  onSort,
+}: {
+  children?: React.ReactNode;
+  className?: string;
+  sortable?: boolean;
+  sortDirection?: "asc" | "desc" | null;
+  onSort?: () => void;
+}) {
   return (
-    <th className={cn("border-b border-stone-200 bg-stone-50 px-4 py-3 text-xs font-bold uppercase tracking-wide text-stone-500", className)}>
-      {children}
+    <th
+      onClick={sortable ? onSort : undefined}
+      title={sortable ? "Klik untuk mengurutkan kolom" : undefined}
+      className={cn(
+        "border-b border-stone-200 bg-stone-50 px-4 py-3 text-xs font-bold uppercase tracking-wide text-stone-500 select-none",
+        sortable && "cursor-pointer hover:bg-stone-100 hover:text-stone-800 transition",
+        className
+      )}
+    >
+      <div className={cn("inline-flex items-center gap-1.5", className?.includes("text-right") && "justify-end w-full")}>
+        <span>{children}</span>
+        {sortable && (
+          <span className="shrink-0 text-stone-400">
+            {sortDirection === "asc" ? (
+              <ArrowUp size={12} className="text-sage-800 font-bold" />
+            ) : sortDirection === "desc" ? (
+              <ArrowDown size={12} className="text-sage-800 font-bold" />
+            ) : (
+              <ArrowUpDown size={11} className="opacity-50 hover:opacity-100" />
+            )}
+          </span>
+        )}
+      </div>
     </th>
   );
 }
@@ -194,19 +227,26 @@ export function RowBtn({
   children,
   onClick,
   tone = "default",
+  title,
 }: {
   children: React.ReactNode;
   onClick: () => void;
   tone?: "default" | "danger" | "primary" | "green";
+  title?: string;
 }) {
   const tones: Record<string, string> = {
-    default: "border-stone-200 text-stone-600 hover:border-sage-600 hover:text-sage-700",
-    danger: "border-red-200 text-red-600 hover:bg-red-50",
-    primary: "bg-sage-700 text-white hover:bg-sage-800 border-transparent",
-    green: "bg-green-600 text-white hover:bg-green-700 border-transparent",
+    default: "border-stone-200 text-stone-600 hover:border-sage-600 hover:text-sage-700 hover:bg-stone-50",
+    danger: "border-red-200 text-red-600 hover:bg-red-50 hover:border-red-300",
+    primary: "bg-sage-700 text-white hover:bg-sage-800 border-transparent shadow-xs",
+    green: "bg-emerald-600 text-white hover:bg-emerald-700 border-transparent shadow-xs",
   };
   return (
-    <button onClick={onClick} className={cn("whitespace-nowrap rounded-lg border px-2.5 py-1.5 text-xs font-semibold transition", tones[tone])}>
+    <button
+      type="button"
+      onClick={onClick}
+      title={title}
+      className={cn("inline-flex items-center justify-center rounded-xl border p-2 text-xs font-semibold transition active:scale-95 cursor-pointer", tones[tone])}
+    >
       {children}
     </button>
   );

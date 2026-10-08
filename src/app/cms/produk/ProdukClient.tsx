@@ -3,7 +3,7 @@ import { useEffect, useState, useCallback, useMemo } from "react";
 import { Input, Label, Btn, useAlert } from "@/components/ui";
 import { Modal, PageHeader, AddButton, TableShell, Th, Td, Badge, RowBtn, Empty, Switch, FilterTabs, Pagination } from "@/components/admin";
 import { rupiah } from "@/lib/utils";
-import { Search } from "lucide-react";
+import { Search, Pencil, Trash2 } from "lucide-react";
 
 type P = {
   id: string;
@@ -53,17 +53,57 @@ export default function ProdukClient({ canDelete = true }: { canDelete?: boolean
   const [saving, setSaving] = useState(false);
   const [q, setQ] = useState("");
   const [filter, setFilter] = useState<"semua" | "tampil" | "sembunyi">("semua");
+  const [sortField, setSortField] = useState<string>("nama");
+  const [sortOrder, setSortOrder] = useState<"asc" | "desc">("asc");
   const [page, setPage] = useState(1);
   const pageSize = 10;
 
+  const handleSort = (field: string) => {
+    if (sortField === field) {
+      setSortOrder(sortOrder === "asc" ? "desc" : "asc");
+    } else {
+      setSortField(field);
+      setSortOrder("asc");
+    }
+  };
+
   const tampilCount = data.filter((d) => d.aktif).length;
   const shown = useMemo(() => {
-    return data.filter(
+    const res = data.filter(
       (d) =>
         (filter === "semua" || (filter === "tampil" ? d.aktif : !d.aktif)) &&
         (d.nama.toLowerCase().includes(q.toLowerCase()) || d.kategori.nama.toLowerCase().includes(q.toLowerCase()))
     );
-  }, [data, filter, q]);
+
+    return res.sort((a, b) => {
+      let valA: string | number = "";
+      let valB: string | number = "";
+
+      if (sortField === "nama") {
+        valA = a.nama;
+        valB = b.nama;
+      } else if (sortField === "kategori") {
+        valA = a.kategori.nama;
+        valB = b.kategori.nama;
+      } else if (sortField === "harga") {
+        valA = a.harga;
+        valB = b.harga;
+      } else if (sortField === "stok") {
+        valA = a.isLayanan ? a.durasiMenit : a.stok;
+        valB = b.isLayanan ? b.durasiMenit : b.stok;
+      } else if (sortField === "aktif") {
+        valA = a.aktif ? 1 : 0;
+        valB = b.aktif ? 1 : 0;
+      }
+
+      if (typeof valA === "string") {
+        const cmp = valA.localeCompare(String(valB));
+        return sortOrder === "asc" ? cmp : -cmp;
+      }
+      const cmp = Number(valA) - Number(valB);
+      return sortOrder === "asc" ? cmp : -cmp;
+    });
+  }, [data, filter, q, sortField, sortOrder]);
 
   const totalPages = Math.ceil(shown.length / pageSize);
   const paginated = useMemo(() => {
@@ -251,11 +291,11 @@ export default function ProdukClient({ canDelete = true }: { canDelete?: boolean
           <TableShell>
             <thead>
               <tr>
-                <Th>Item</Th>
-                <Th>Kategori</Th>
-                <Th>Harga</Th>
-                <Th>Stok / Durasi</Th>
-                <Th>Tampil di Website</Th>
+                <Th sortable sortDirection={sortField === "nama" ? sortOrder : null} onSort={() => handleSort("nama")}>Item</Th>
+                <Th sortable sortDirection={sortField === "kategori" ? sortOrder : null} onSort={() => handleSort("kategori")}>Kategori</Th>
+                <Th sortable sortDirection={sortField === "harga" ? sortOrder : null} onSort={() => handleSort("harga")}>Harga</Th>
+                <Th sortable sortDirection={sortField === "stok" ? sortOrder : null} onSort={() => handleSort("stok")}>Stok / Durasi</Th>
+                <Th sortable sortDirection={sortField === "aktif" ? sortOrder : null} onSort={() => handleSort("aktif")}>Tampil di Website</Th>
                 <Th className="text-right">Aksi</Th>
               </tr>
             </thead>
@@ -302,8 +342,14 @@ export default function ProdukClient({ canDelete = true }: { canDelete?: boolean
                   </Td>
                   <Td className="text-right">
                     <div className="flex items-center justify-end gap-1.5">
-                      <RowBtn onClick={() => openEditModal(p)}>Edit</RowBtn>
-                      {canDelete && <RowBtn tone="danger" onClick={() => hapus(p.id)}>Hapus</RowBtn>}
+                      <RowBtn onClick={() => openEditModal(p)} title="Edit Perawatan/Produk">
+                        <Pencil size={14} />
+                      </RowBtn>
+                      {canDelete && (
+                        <RowBtn tone="danger" onClick={() => hapus(p.id)} title="Hapus Produk">
+                          <Trash2 size={14} />
+                        </RowBtn>
+                      )}
                     </div>
                   </Td>
                 </tr>

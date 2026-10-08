@@ -40,6 +40,8 @@ export default async function CmsDashboard() {
     number,
     number,
     number,
+    number,
+    { tipe: string; jumlah: number }[],
     { tipe: string; jumlah: number }[],
     { tanggal: Date; tipe: string; jumlah: number; keterangan: string | null }[],
     { status: string; _count: number }[],
@@ -53,48 +55,67 @@ export default async function CmsDashboard() {
     }[],
     { karyawanId: string | null; _count: number }[]
   ];
-  const [bookingHari, bookingBaru, produkAktif, transaksiHari, trx30, bookings30, topGroup, recent, topTherapistGroup] =
-    await safeDb<DashTuple>(
-      () =>
-        Promise.all([
-          prisma.booking.count({ where: { jadwal: { gte: today } } }),
-          prisma.booking.count({ where: { status: "BARU" } }),
-          prisma.produk.count({ where: { aktif: true } }),
-          prisma.transaksiKeuangan.findMany({ where: { tanggal: { gte: today } } }),
-          prisma.transaksiKeuangan.findMany({
-            where: { tanggal: { gte: ago30 } },
-            select: { tanggal: true, tipe: true, jumlah: true, keterangan: true },
-          }),
-          prisma.booking.groupBy({ by: ["status"], where: { createdAt: { gte: ago30 } }, _count: true }),
-          prisma.booking.groupBy({
-            by: ["produkId"],
-            where: { status: { not: "BATAL" } },
-            _count: true,
-            orderBy: { _count: { produkId: "desc" } },
-            take: 5,
-          }),
-          prisma.booking.findMany({
-            include: { pelanggan: true, produk: true, karyawan: true },
-            orderBy: { createdAt: "desc" },
-            take: 8,
-          }),
-          prisma.booking.groupBy({
-            by: ["karyawanId"],
-            where: {
-              status: "SELESAI",
-              karyawanId: { not: null },
-              jadwal: { gte: startOfMonth },
-            },
-            _count: true,
-            orderBy: { _count: { karyawanId: "desc" } },
-            take: 1,
-          }),
-        ]) as unknown as Promise<DashTuple>,
-      [0, 0, 0, [], [], [], [], [], []]
-    );
+  const [
+    bookingHari,
+    bookingBaru,
+    produkAktif,
+    totalPelanggan,
+    transaksiHari,
+    transaksiBulanIni,
+    trx30,
+    bookings30,
+    topGroup,
+    recent,
+    topTherapistGroup,
+  ] = await safeDb<DashTuple>(
+    () =>
+      Promise.all([
+        prisma.booking.count({ where: { jadwal: { gte: today } } }),
+        prisma.booking.count({ where: { status: "BARU" } }),
+        prisma.produk.count({ where: { aktif: true } }),
+        prisma.pelanggan.count(),
+        prisma.transaksiKeuangan.findMany({ where: { tanggal: { gte: today } } }),
+        prisma.transaksiKeuangan.findMany({ where: { tanggal: { gte: startOfMonth } } }),
+        prisma.transaksiKeuangan.findMany({
+          where: { tanggal: { gte: ago30 } },
+          select: { tanggal: true, tipe: true, jumlah: true, keterangan: true },
+        }),
+        prisma.booking.groupBy({ by: ["status"], where: { createdAt: { gte: ago30 } }, _count: true }),
+        prisma.booking.groupBy({
+          by: ["produkId"],
+          where: { status: { not: "BATAL" } },
+          _count: true,
+          orderBy: { _count: { produkId: "desc" } },
+          take: 5,
+        }),
+        prisma.booking.findMany({
+          include: { pelanggan: true, produk: true, karyawan: true },
+          orderBy: { createdAt: "desc" },
+          take: 8,
+        }),
+        prisma.booking.groupBy({
+          by: ["karyawanId"],
+          where: {
+            status: "SELESAI",
+            karyawanId: { not: null },
+            jadwal: { gte: startOfMonth },
+          },
+          _count: true,
+          orderBy: { _count: { karyawanId: "desc" } },
+          take: 1,
+        }),
+      ]) as unknown as Promise<DashTuple>,
+    [0, 0, 0, 0, [], [], [], [], [], [], []]
+  );
 
   const omzetHari = transaksiHari.filter((t) => t.tipe === "MASUK").reduce((a, b) => a + b.jumlah, 0);
   const keluarHari = transaksiHari.filter((t) => t.tipe === "KELUAR").reduce((a, b) => a + b.jumlah, 0);
+
+  const omzetBulan = transaksiBulanIni.filter((t) => t.tipe === "MASUK").reduce((a, b) => a + b.jumlah, 0);
+  const keluarBulan = transaksiBulanIni.filter((t) => t.tipe === "KELUAR").reduce((a, b) => a + b.jumlah, 0);
+  const labaBulan = omzetBulan - keluarBulan;
+  const countMasukBulan = transaksiBulanIni.filter((t) => t.tipe === "MASUK").length;
+  const avgBasket = countMasukBulan > 0 ? Math.round(omzetBulan / countMasukBulan) : 0;
 
   // Daily series (14 days, tanggal WIB)
   const days: { key: string; label: string }[] = [];
@@ -169,10 +190,26 @@ export default async function CmsDashboard() {
       {/* Header */}
       <PageHeader
         title="Dashboard Analitik Operasional"
-        desc="Visualisasi arus kas, kinerja perawatan, dan performa transaksi Edelweiss Salon & Makeup Art."
+        desc="Visualisasi eksekutif: omzet harian & bulanan, performa terapis, serta rekapitulasi transaksi kasir."
+        action={
+          <div className="flex flex-wrap items-center gap-2">
+            <Link
+              href="/cms/kasir"
+              className="rounded-xl bg-sage-800 px-3.5 py-2 text-xs font-bold text-white shadow-sm hover:bg-sage-900 transition flex items-center gap-1.5"
+            >
+              🛒 Kasir POS
+            </Link>
+            <Link
+              href="/cms/booking"
+              className="rounded-xl border border-stone-300 bg-white px-3.5 py-2 text-xs font-bold text-stone-700 hover:bg-stone-50 transition"
+            >
+              📅 Kelola Booking
+            </Link>
+          </div>
+        }
       />
 
-      {/* Primary Metric Stat Cards */}
+      {/* Primary Metric Stat Cards (Today) */}
       <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
         <Stat icon={<Wallet size={20} />} label="Omzet Hari Ini" value={rupiah(omzetHari)} tone="green" />
         <Stat icon={<TrendingDown size={20} />} label="Pengeluaran Hari Ini" value={rupiah(keluarHari)} tone="red" />
@@ -190,6 +227,32 @@ export default async function CmsDashboard() {
           sub="Booking menunggu tanggapan"
           tone="gold"
         />
+      </div>
+
+      {/* Executive Monthly KPI Summary Strip */}
+      <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4 rounded-3xl border border-stone-200/80 bg-stone-900 p-4 text-white shadow-md">
+        <div className="rounded-2xl bg-white/5 p-3.5 border border-white/10">
+          <span className="text-[10px] font-bold uppercase tracking-wider text-stone-400">Omzet Bulan Ini</span>
+          <p className="text-lg font-extrabold text-emerald-400 mt-0.5">{rupiah(omzetBulan)}</p>
+          <span className="text-[11px] text-stone-400">{countMasukBulan}x transaksi masuk</span>
+        </div>
+        <div className="rounded-2xl bg-white/5 p-3.5 border border-white/10">
+          <span className="text-[10px] font-bold uppercase tracking-wider text-stone-400">Estimasi Laba Bersih</span>
+          <p className={`text-lg font-extrabold mt-0.5 ${labaBulan >= 0 ? "text-sage-300" : "text-rose-400"}`}>
+            {rupiah(labaBulan)}
+          </p>
+          <span className="text-[11px] text-stone-400">Pengeluaran: {rupiah(keluarBulan)}</span>
+        </div>
+        <div className="rounded-2xl bg-white/5 p-3.5 border border-white/10">
+          <span className="text-[10px] font-bold uppercase tracking-wider text-stone-400">Rata-rata Nota / Cart</span>
+          <p className="text-lg font-extrabold text-gold-300 mt-0.5">{rupiah(avgBasket)}</p>
+          <span className="text-[11px] text-stone-400">Per transaksi kasir</span>
+        </div>
+        <div className="rounded-2xl bg-white/5 p-3.5 border border-white/10">
+          <span className="text-[10px] font-bold uppercase tracking-wider text-stone-400">Database Pelanggan</span>
+          <p className="text-lg font-extrabold text-white mt-0.5">{totalPelanggan} Orang</p>
+          <span className="text-[11px] text-stone-400">CRM &amp; Riwayat Terdaftar</span>
+        </div>
       </div>
 
       {/* Top Therapist Badge Highlight */}

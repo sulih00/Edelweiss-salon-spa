@@ -2,6 +2,7 @@
 import { useEffect, useState, useCallback } from "react";
 import { Input, Label, Btn, useAlert } from "@/components/ui";
 import { Modal, PageHeader, AddButton, TableShell, Th, Td, RowBtn, Empty, Switch } from "@/components/admin";
+import { Pencil, Trash2 } from "lucide-react";
 
 type R = { id: string; bank: string; nomor: string; atasNama: string; aktif: boolean; urutan: number };
 
@@ -15,6 +16,26 @@ export default function RekeningClient() {
   const [err, setErr] = useState("");
   const [modal, setModal] = useState(false);
   const [saving, setSaving] = useState(false);
+
+  const [sortCol, setSortCol] = useState<string>("urutan");
+  const [sortDir, setSortDir] = useState<"asc" | "desc">("asc");
+
+  const handleSort = (col: string) => {
+    if (sortCol === col) setSortDir(sortDir === "asc" ? "desc" : "asc");
+    else { setSortCol(col); setSortDir("asc"); }
+  };
+
+  const sortedData = [...data].sort((a, b) => {
+    const valA: string | number = (a[sortCol as keyof R] ?? "") as string | number;
+    const valB: string | number = (b[sortCol as keyof R] ?? "") as string | number;
+
+    if (typeof valA === "string") {
+      const cmp = String(valA).localeCompare(String(valB));
+      return sortDir === "asc" ? cmp : -cmp;
+    }
+    const cmp = Number(valA) - Number(valB);
+    return sortDir === "asc" ? cmp : -cmp;
+  });
 
   const load = useCallback(async () => {
     try {
@@ -143,16 +164,16 @@ export default function RekeningClient() {
         <TableShell>
           <thead>
             <tr>
-              <Th>Urutan</Th>
-              <Th>Bank</Th>
-              <Th>Nomor</Th>
-              <Th>Atas Nama</Th>
-              <Th>Tampil di Website</Th>
+              <Th sortable sortDirection={sortCol === "urutan" ? sortDir : null} onSort={() => handleSort("urutan")}>Urutan</Th>
+              <Th sortable sortDirection={sortCol === "bank" ? sortDir : null} onSort={() => handleSort("bank")}>Bank</Th>
+              <Th sortable sortDirection={sortCol === "nomor" ? sortDir : null} onSort={() => handleSort("nomor")}>Nomor</Th>
+              <Th sortable sortDirection={sortCol === "atasNama" ? sortDir : null} onSort={() => handleSort("atasNama")}>Atas Nama</Th>
+              <Th sortable sortDirection={sortCol === "aktif" ? sortDir : null} onSort={() => handleSort("aktif")}>Tampil di Website</Th>
               <Th className="text-right">Aksi</Th>
             </tr>
           </thead>
           <tbody>
-            {data.map((r) => (
+            {sortedData.map((r) => (
               <tr key={r.id} className="transition hover:bg-stone-50">
                 <Td className="text-stone-400">{r.urutan}</Td>
                 <Td>
@@ -168,9 +189,11 @@ export default function RekeningClient() {
                 </Td>
                 <Td className="text-right">
                   <div className="flex items-center justify-end gap-1.5">
-                    <RowBtn onClick={() => openEditModal(r)}>Edit</RowBtn>
-                    <RowBtn tone="danger" onClick={() => hapus(r.id)}>
-                      Hapus
+                    <RowBtn onClick={() => openEditModal(r)} title="Edit Rekening">
+                      <Pencil size={14} />
+                    </RowBtn>
+                    <RowBtn tone="danger" onClick={() => hapus(r.id)} title="Hapus Rekening">
+                      <Trash2 size={14} />
                     </RowBtn>
                   </div>
                 </Td>

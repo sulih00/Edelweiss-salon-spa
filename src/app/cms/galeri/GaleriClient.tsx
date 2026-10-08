@@ -2,6 +2,7 @@
 import { useEffect, useState, useCallback } from "react";
 import { Input, Label, Btn, useAlert } from "@/components/ui";
 import { Modal, PageHeader, AddButton, Badge, RowBtn, Empty } from "@/components/admin";
+import { Eye, EyeOff, Trash2 } from "lucide-react";
 
 type G = { id: string; foto: string; judul?: string | null; tampil: boolean };
 
@@ -92,8 +93,12 @@ export default function GaleriClient() {
                   <Badge tone={g.tampil ? "green" : "stone"}>{g.tampil ? "Tampil" : "Disembunyikan"}</Badge>
                 </div>
                 <div className="flex shrink-0 gap-1.5">
-                  <RowBtn onClick={() => toggle(g)}>{g.tampil ? "Sembunyikan" : "Tampilkan"}</RowBtn>
-                  <RowBtn tone="danger" onClick={() => hapus(g.id)}>Hapus</RowBtn>
+                  <RowBtn onClick={() => toggle(g)} title={g.tampil ? "Sembunyikan dari website" : "Tampilkan di website"}>
+                    {g.tampil ? <EyeOff size={14} /> : <Eye size={14} />}
+                  </RowBtn>
+                  <RowBtn tone="danger" onClick={() => hapus(g.id)} title="Hapus Foto">
+                    <Trash2 size={14} />
+                  </RowBtn>
                 </div>
               </div>
             </div>

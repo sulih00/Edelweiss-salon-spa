@@ -5,7 +5,7 @@ import { Input, Label, Btn, useAlert } from "@/components/ui";
 import { rupiah } from "@/lib/utils";
 import { WA_ADMIN, waLink, pesanBookingBaru } from "@/lib/wa";
 import { Check, ChevronLeft, ChevronRight, CalendarHeart, Sparkles, UserRound, TicketPercent, Landmark, Copy, UploadCloud, X, Clock, UserCheck } from "lucide-react";
-import { DP_MINIMAL, type Rekening } from "@/lib/bank";
+import { type Rekening } from "@/lib/bank";
 
 type L = { id: string; nama: string; harga: number; durasiMenit: number; kategori: { nama: string }; foto?: string | null };
 type K = { id: string; nama: string; jabatan: string };

@@ -5,7 +5,8 @@ import { rupiah, formatTanggal } from "@/lib/utils";
 import { waLink, pesanKonfirmasiAdmin, pesanStrukWA } from "@/lib/wa";
 import { PageHeader, TableShell, Th, Td, Badge, FilterTabs, Pagination, Empty } from "@/components/admin";
 import BookingActions from "./BookingActions";
-import { Search } from "lucide-react";
+import { Search, Receipt } from "lucide-react";
+import { IconWhatsApp } from "@/components/SocialIcons";
 
 type BookingItem = {
   id: string;
@@ -27,11 +28,22 @@ const statusTone = (s: string) =>
 export default function BookingClient({ data }: { data: BookingItem[] }) {
   const [q, setQ] = useState("");
   const [filterStatus, setFilterStatus] = useState<string>("semua");
+  const [sortField, setSortField] = useState<string>("jadwal");
+  const [sortOrder, setSortOrder] = useState<"asc" | "desc">("desc");
   const [page, setPage] = useState(1);
   const pageSize = 10;
 
+  const handleSort = (field: string) => {
+    if (sortField === field) {
+      setSortOrder(sortOrder === "asc" ? "desc" : "asc");
+    } else {
+      setSortField(field);
+      setSortOrder("asc");
+    }
+  };
+
   const filtered = useMemo(() => {
-    return data.filter((b) => {
+    const res = data.filter((b) => {
       const matchQ =
         b.pelanggan.nama.toLowerCase().includes(q.toLowerCase()) ||
         b.pelanggan.wa.includes(q) ||
@@ -39,16 +51,48 @@ export default function BookingClient({ data }: { data: BookingItem[] }) {
       const matchStatus = filterStatus === "semua" || b.status === filterStatus;
       return matchQ && matchStatus;
     });
-  }, [data, q, filterStatus]);
 
-  const totalPages = Math.ceil(filtered.length / pageSize);
+    return res.sort((a, b) => {
+      let valA: string | number = "";
+      let valB: string | number = "";
+
+      if (sortField === "pelanggan") {
+        valA = a.pelanggan.nama;
+        valB = b.pelanggan.nama;
+      } else if (sortField === "produk") {
+        valA = a.produk.nama;
+        valB = b.produk.nama;
+      } else if (sortField === "jadwal") {
+        valA = new Date(a.jadwal).getTime();
+        valB = new Date(b.jadwal).getTime();
+      } else if (sortField === "total") {
+        valA = Math.max(0, a.produk.harga - (a.diskon ?? 0));
+        valB = Math.max(0, b.produk.harga - (b.diskon ?? 0));
+      } else if (sortField === "karyawan") {
+        valA = a.karyawan?.nama || "";
+        valB = b.karyawan?.nama || "";
+      } else if (sortField === "status") {
+        valA = a.status;
+        valB = b.status;
+      }
+
+      if (typeof valA === "string") {
+        const cmp = valA.localeCompare(String(valB));
+        return sortOrder === "asc" ? cmp : -cmp;
+      }
+      const cmp = Number(valA) - Number(valB);
+      return sortOrder === "asc" ? cmp : -cmp;
+    });
+  }, [data, q, filterStatus, sortField, sortOrder]);
+
+  const totalPages = Math.ceil(filtered.length / pageSize) || 1;
   const paginated = useMemo(() => {
     return filtered.slice((page - 1) * pageSize, page * pageSize);
   }, [filtered, page, pageSize]);
 
   return (
     <div className="space-y-4">
-      <PageHeader title="Booking & Jadwal" desc={`${data.length} booking terdaftar.`} />
+      <PageHeader title="Booking &amp; Jadwal" desc={`${data.length} booking terdaftar.`} />
 
       {/* Filter Tabs & Search Bar */}
       <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
@@ -59,7 +103,7 @@ export default function BookingClient({ data }: { data: BookingItem[] }) {
             setPage(1);
           }}
           options={[
-            { value: "semua", label: "Semua", count: data.length },
+            { value: "SEMUA", label: "Semua", count: data.length },
             { value: "BARU", label: "Baru", count: data.filter((b) => b.status === "BARU").length },
             { value: "DIKONFIRMASI", label: "Dikonfirmasi", count: data.filter((b) => b.status === "DIKONFIRMASI").length },
             { value: "SELESAI", label: "Selesai", count: data.filter((b) => b.status === "SELESAI").length },
@@ -90,11 +134,11 @@ export default function BookingClient({ data }: { data: BookingItem[] }) {
           <TableShell>
             <thead>
               <tr>
-                <Th>Pelanggan</Th>
-                <Th>Layanan</Th>
-                <Th>Jadwal</Th>
-                <Th className="text-right">Total</Th>
-                <Th>Status</Th>
+                <Th sortable sortDirection={sortField === "pelanggan" ? sortOrder : null} onSort={() => handleSort("pelanggan")}>Pelanggan</Th>
+                <Th sortable sortDirection={sortField === "produk" ? sortOrder : null} onSort={() => handleSort("produk")}>Layanan</Th>
+                <Th sortable sortDirection={sortField === "jadwal" ? sortOrder : null} onSort={() => handleSort("jadwal")}>Jadwal</Th>
+                <Th sortable sortDirection={sortField === "total" ? sortOrder : null} onSort={() => handleSort("total")} className="text-right">Total</Th>
+                <Th sortable sortDirection={sortField === "status" ? sortOrder : null} onSort={() => handleSort("status")}>Status</Th>
                 <Th>Bukti TF</Th>
                 <Th className="text-right">Aksi</Th>
               </tr>
@@ -109,16 +153,16 @@ export default function BookingClient({ data }: { data: BookingItem[] }) {
                 const waMsg =
                   b.status === "SELESAI"
                     ? pesanStrukWA({
-                        noNota,
-                        nama: b.pelanggan.nama,
-                        layanan: b.produk.nama,
-                        harga: b.produk.harga,
-                        diskon: b.diskon ?? 0,
-                        promoKode: b.promo?.kode,
-                        total,
-                        jadwal: tglFormatted,
-                        terapis: b.karyawan?.nama,
-                      })
+                      noNota,
+                      nama: b.pelanggan.nama,
+                      layanan: b.produk.nama,
+                      harga: b.produk.harga,
+                      diskon: b.diskon ?? 0,
+                      promoKode: b.promo?.kode,
+                      total,
+                      jadwal: tglFormatted,
+                      terapis: b.karyawan?.nama,
+                    })
                     : pesanKonfirmasiAdmin(b.pelanggan.nama, b.produk.nama, tglFormatted);
 
                 const wa = waLink(b.pelanggan.wa, waMsg);
@@ -177,23 +221,25 @@ export default function BookingClient({ data }: { data: BookingItem[] }) {
                       </div>
                     </Td>
                     <Td className="text-right">
-                      <div className="flex justify-end gap-1.5">
+                      <div className="flex justify-end items-center gap-1.5">
                         <BookingActions id={b.id} status={b.status} />
                         {b.status === "SELESAI" ? (
                           <a
                             href={`/cms/struk/${b.id}`}
-                            className="whitespace-nowrap rounded-lg bg-[#25D366] px-3 py-1.5 text-xs font-semibold text-white transition hover:bg-green-600"
+                            title="Lihat Struk Digital"
+                            className="inline-flex items-center justify-center rounded-xl bg-sage-700 p-2 text-white transition hover:bg-sage-800 shadow-xs cursor-pointer"
                           >
-                            📸 Struk WA (Gambar)
+                            <Receipt size={15} />
                           </a>
                         ) : (
                           <a
                             href={wa}
                             target="_blank"
                             rel="noreferrer"
-                            className="whitespace-nowrap rounded-lg bg-[#25D366] px-2.5 py-1.5 text-xs font-semibold text-white"
+                            title="Kirim Pesan WhatsApp"
+                            className="inline-flex items-center justify-center rounded-xl bg-[#25D366] p-2 text-white transition hover:bg-green-600 shadow-xs cursor-pointer"
                           >
-                            WA
+                            <IconWhatsApp className="h-3.5 w-3.5 fill-current" />
                           </a>
                         )}
                       </div>

@@ -1,10 +1,9 @@
-import Link from "next/link";
 import { prisma } from "@/lib/prisma";
 import { safeDb } from "@/lib/safe-db";
 import { rupiah } from "@/lib/utils";
 import { sessionRole } from "@/lib/roles";
 import { redirect } from "next/navigation";
-import { PageHeader, Stat, TableShell, Th, Td, Badge } from "@/components/admin";
+import { PageHeader, Stat } from "@/components/admin";
 import PrintButton from "@/components/PrintButton";
 import LaporanExport, { type LaporanRow } from "./LaporanExport";
 import { Wallet, TrendingDown, Scale, TicketPercent, CalendarCheck } from "lucide-react";
@@ -13,6 +12,8 @@ function bulanIni() {
   const n = new Date();
   return `${n.getFullYear()}-${String(n.getMonth() + 1).padStart(2, "0")}`;
 }
+
+import LaporanClient from "./LaporanClient";
 
 export default async function LaporanPage({ searchParams }: { searchParams: Promise<{ bulan?: string }> }) {
   const s = await sessionRole();
@@ -100,52 +101,7 @@ export default async function LaporanPage({ searchParams }: { searchParams: Prom
         <Stat icon={<TicketPercent size={20} />} label="Total diskon" value={rupiah(diskon)} tone="sage" />
       </div>
 
-      <div className="mt-4 grid gap-4 xl:grid-cols-2">
-        <div className="rounded-2xl border border-stone-200/70 bg-white shadow-sm">
-          <div className="border-b border-stone-200 px-5 py-4"><h2 className="font-bold text-stone-900">Per Kategori</h2></div>
-          <TableShell>
-            <thead><tr><Th>Kategori</Th><Th>Tipe</Th><Th className="text-right">Transaksi</Th><Th className="text-right">Total</Th></tr></thead>
-            <tbody>
-              {katGroup.map((k, i) => (
-                <tr key={i} className="transition hover:bg-stone-50">
-                  <Td className="font-semibold">{k.kategori}</Td>
-                  <Td><Badge tone={k.tipe === "MASUK" ? "green" : "red"}>{k.tipe}</Badge></Td>
-                  <Td className="text-right text-stone-500">{k._count}x</Td>
-                  <Td className="text-right font-bold">{rupiah(k._sum.jumlah ?? 0)}</Td>
-                </tr>
-              ))}
-            </tbody>
-          </TableShell>
-          {katGroup.length === 0 && <p className="px-5 py-6 text-center text-sm text-stone-400">Belum ada transaksi bulan ini.</p>}
-        </div>
-
-        <div className="rounded-2xl border border-stone-200/70 bg-white shadow-sm">
-          <div className="border-b border-stone-200 px-5 py-4"><h2 className="font-bold text-stone-900">Booking Bulan Ini</h2></div>
-          <TableShell>
-            <thead><tr><Th>Pelanggan</Th><Th>Total</Th><Th>Status</Th><Th className="text-right">Nota</Th></tr></thead>
-            <tbody>
-              {bookings.map((b) => (
-                <tr key={b.id} className="transition hover:bg-stone-50">
-                  <Td>
-                    <p className="font-semibold text-stone-900">{b.pelanggan.nama}</p>
-                    <p className="text-xs text-stone-400">{b.produk.nama}</p>
-                  </Td>
-                  <Td className="font-semibold">{rupiah(Math.max(0, b.produk.harga - (b.diskon ?? 0)))}</Td>
-                  <Td><Badge tone={b.status === "SELESAI" ? "green" : b.status === "BATAL" ? "red" : "gold"}>{b.status}</Badge></Td>
-                  <Td className="text-right">
-                    {b.status === "SELESAI" ? (
-                      <Link href={`/cms/struk/${b.id}`} className="rounded-lg border border-stone-200 px-2.5 py-1.5 text-xs font-semibold text-stone-600 hover:border-sage-600 hover:text-sage-700">
-                        Struk
-                      </Link>
-                    ) : <span className="text-xs text-stone-300">—</span>}
-                  </Td>
-                </tr>
-              ))}
-            </tbody>
-          </TableShell>
-          {bookings.length === 0 && <p className="px-5 py-6 text-center text-sm text-stone-400">Belum ada booking bulan ini.</p>}
-        </div>
-      </div>
+      <LaporanClient katGroup={katGroup} bookings={bookings} />
     </div>
   );
 }

@@ -3,7 +3,7 @@ import { useEffect, useState, useCallback } from "react";
 import { Input, Label, Btn, useAlert } from "@/components/ui";
 import { Modal, PageHeader, AddButton, TableShell, Th, Td, Badge, RowBtn, Empty, Stat } from "@/components/admin";
 import { rupiah } from "@/lib/utils";
-import { Award, DollarSign, CalendarCheck } from "lucide-react";
+import { Award, DollarSign, CalendarCheck, Pencil, Trash2 } from "lucide-react";
 
 type K = { id: string; nama: string; jabatan: string; telepon?: string | null; komisiPersen: number };
 type KomisiRow = {
@@ -35,6 +35,44 @@ export default function KaryawanClient() {
   const [komisiData, setKomisiData] = useState<KomisiRow[]>([]);
   const [summary, setSummary] = useState({ totalTreatment: 0, grandTotalOmzet: 0, grandTotalKomisi: 0 });
   const [loadingKomisi, setLoadingKomisi] = useState(false);
+
+  const [sortCol, setSortCol] = useState<string>("nama");
+  const [sortDir, setSortDir] = useState<"asc" | "desc">("asc");
+
+  const [sortKomisiCol, setSortKomisiCol] = useState<string>("nama");
+  const [sortKomisiDir, setSortKomisiDir] = useState<"asc" | "desc">("asc");
+
+  const handleSort = (col: string) => {
+    if (sortCol === col) setSortDir(sortDir === "asc" ? "desc" : "asc");
+    else { setSortCol(col); setSortDir("asc"); }
+  };
+
+  const handleKomisiSort = (col: string) => {
+    if (sortKomisiCol === col) setSortKomisiDir(sortKomisiDir === "asc" ? "desc" : "asc");
+    else { setSortKomisiCol(col); setSortKomisiDir("asc"); }
+  };
+
+  const sortedData = [...data].sort((a, b) => {
+    const valA: string | number = (a[sortCol as keyof K] ?? "") as string | number;
+    const valB: string | number = (b[sortCol as keyof K] ?? "") as string | number;
+    if (typeof valA === "string") {
+      const cmp = valA.localeCompare(String(valB));
+      return sortDir === "asc" ? cmp : -cmp;
+    }
+    const cmp = Number(valA) - Number(valB);
+    return sortDir === "asc" ? cmp : -cmp;
+  });
+
+  const sortedKomisiData = [...komisiData].sort((a, b) => {
+    const valA: string | number = (a[sortKomisiCol as keyof KomisiRow] ?? "") as string | number;
+    const valB: string | number = (b[sortKomisiCol as keyof KomisiRow] ?? "") as string | number;
+    if (typeof valA === "string") {
+      const cmp = valA.localeCompare(String(valB));
+      return sortKomisiDir === "asc" ? cmp : -cmp;
+    }
+    const cmp = Number(valA) - Number(valB);
+    return sortKomisiDir === "asc" ? cmp : -cmp;
+  });
 
   const loadData = useCallback(async () => {
     try {
@@ -179,15 +217,15 @@ export default function KaryawanClient() {
           <TableShell>
             <thead>
               <tr>
-                <Th>Nama</Th>
-                <Th>Jabatan</Th>
-                <Th>Telepon</Th>
-                <Th className="text-right">Komisi (%)</Th>
+                <Th sortable sortDirection={sortCol === "nama" ? sortDir : null} onSort={() => handleSort("nama")}>Nama</Th>
+                <Th sortable sortDirection={sortCol === "jabatan" ? sortDir : null} onSort={() => handleSort("jabatan")}>Jabatan</Th>
+                <Th sortable sortDirection={sortCol === "telepon" ? sortDir : null} onSort={() => handleSort("telepon")}>Telepon</Th>
+                <Th sortable sortDirection={sortCol === "komisiPersen" ? sortDir : null} onSort={() => handleSort("komisiPersen")} className="text-right">Komisi (%)</Th>
                 <Th className="text-right">Aksi</Th>
               </tr>
             </thead>
             <tbody>
-              {data.map((k) => (
+              {sortedData.map((k) => (
                 <tr key={k.id} className="transition hover:bg-stone-50">
                   <Td>
                     <div className="flex items-center gap-3">
@@ -204,9 +242,11 @@ export default function KaryawanClient() {
                   <Td className="text-right font-semibold text-sage-800">{k.komisiPersen}%</Td>
                   <Td className="text-right">
                     <div className="flex items-center justify-end gap-1.5">
-                      <RowBtn onClick={() => openEditModal(k)}>Edit</RowBtn>
-                      <RowBtn tone="danger" onClick={() => hapus(k.id)}>
-                        Hapus
+                      <RowBtn onClick={() => openEditModal(k)} title="Edit Karyawan">
+                        <Pencil size={14} />
+                      </RowBtn>
+                      <RowBtn tone="danger" onClick={() => hapus(k.id)} title="Hapus Karyawan">
+                        <Trash2 size={14} />
                       </RowBtn>
                     </div>
                   </Td>
@@ -249,16 +289,16 @@ export default function KaryawanClient() {
           <TableShell>
             <thead>
               <tr>
-                <Th>Terapis</Th>
-                <Th>Jabatan</Th>
-                <Th className="text-right">Tarif Komisi</Th>
-                <Th className="text-right">Treatment Selesai</Th>
-                <Th className="text-right">Total Omzet</Th>
-                <Th className="text-right">Nominal Komisi</Th>
+                <Th sortable sortDirection={sortKomisiCol === "nama" ? sortKomisiDir : null} onSort={() => handleKomisiSort("nama")}>Terapis</Th>
+                <Th sortable sortDirection={sortKomisiCol === "jabatan" ? sortKomisiDir : null} onSort={() => handleKomisiSort("jabatan")}>Jabatan</Th>
+                <Th sortable sortDirection={sortKomisiCol === "komisiPersen" ? sortKomisiDir : null} onSort={() => handleKomisiSort("komisiPersen")} className="text-right">Tarif Komisi</Th>
+                <Th sortable sortDirection={sortKomisiCol === "totalTreatment" ? sortKomisiDir : null} onSort={() => handleKomisiSort("totalTreatment")} className="text-right">Treatment Selesai</Th>
+                <Th sortable sortDirection={sortKomisiCol === "totalOmzet" ? sortKomisiDir : null} onSort={() => handleKomisiSort("totalOmzet")} className="text-right">Total Omzet</Th>
+                <Th sortable sortDirection={sortKomisiCol === "totalKomisi" ? sortKomisiDir : null} onSort={() => handleKomisiSort("totalKomisi")} className="text-right">Nominal Komisi</Th>
               </tr>
             </thead>
             <tbody>
-              {komisiData.map((row) => (
+              {sortedKomisiData.map((row) => (
                 <tr key={row.id} className="transition hover:bg-stone-50">
                   <Td className="font-semibold text-stone-900">{row.nama}</Td>
                   <Td>

@@ -6,8 +6,8 @@ import Image from "next/image";
 import { Input, Label, Btn } from "@/components/ui";
 
 export default function LoginPage() {
-  const [email, setEmail] = useState("admin@edelweiss.local");
-  const [password, setPassword] = useState("admin123");
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
   const [err, setErr] = useState("");
   const router = useRouter();
 
@@ -27,11 +27,10 @@ export default function LoginPage() {
       <h1 className="font-serif-display text-3xl font-bold text-sage-900">Login CMS</h1>
       <p className="mt-1 text-sm text-stone-500">Edelweiss Salon Makeup Art — Owner / Admin / Kasir</p>
       <form onSubmit={submit} className="mt-6 space-y-4 rounded-2xl border bg-white p-6 text-left">
-        <div><Label>Email</Label><Input value={email} onChange={(e) => setEmail(e.target.value)} /></div>
-        <div><Label>Password</Label><Input type="password" value={password} onChange={(e) => setPassword(e.target.value)} /></div>
+        <div><Label>Email</Label><Input type="email" placeholder="Masukkan email" value={email} onChange={(e) => setEmail(e.target.value)} required /></div>
+        <div><Label>Password</Label><Input type="password" placeholder="Masukkan password" value={password} onChange={(e) => setPassword(e.target.value)} required /></div>
         <Btn className="w-full">Masuk</Btn>
-        {err && <p className="text-sm text-red-600">{err}</p>}
-        <p className="text-xs text-stone-400">Default: admin@edelweiss.local / admin123</p>
+        {err && <p className="text-sm text-red-600 font-semibold">{err}</p>}
       </form>
     </div>
   );
