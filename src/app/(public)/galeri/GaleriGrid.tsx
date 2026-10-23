@@ -12,7 +12,7 @@ export default function GaleriGrid({ data }: { data: { id: string; foto: string;
           <motion.div key={g.id} initial={{ opacity: 0, y: 20 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} transition={{ delay: (k % 6) * 0.05 }} className="group relative cursor-zoom-in overflow-hidden rounded-2xl break-inside-avoid" onClick={() => setIdx(k)}>
             {g.foto ? (
               // eslint-disable-next-line @next/next/no-img-element
-              <img src={g.foto} alt={g.judul ?? ""} className="w-full object-cover transition duration-700 group-hover:scale-108" loading="lazy" />
+              <img src={g.foto} alt={g.judul ?? ""} className="w-full object-cover transition duration-700 group-hover:scale-110" loading="lazy" />
             ) : (
               <div className="flex h-48 items-center justify-center bg-sage-100"><p className="font-serif-display">{g.judul}</p></div>
             )}

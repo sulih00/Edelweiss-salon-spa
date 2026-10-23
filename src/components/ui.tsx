@@ -2,14 +2,14 @@ import { cn } from "@/lib/utils";
 import type { ButtonHTMLAttributes } from "react";
 
 export function Card({ className, ...props }: React.HTMLAttributes<HTMLDivElement>) {
-  return <div className={cn("rounded-2xl border border-stone-200 bg-white p-5 shadow-sm", className)} {...props} />;
+  return <div className={cn("rounded-2xl border border-stone-200/80 bg-white p-5 shadow-sm", className)} {...props} />;
 }
 
 export function Btn({ className, ...props }: ButtonHTMLAttributes<HTMLButtonElement>) {
   return (
     <button
       className={cn(
-        "rounded-full bg-sage-700 px-5 py-2.5 text-sm font-medium text-white hover:bg-sage-800 disabled:opacity-50",
+        "rounded-full bg-sage-700 px-5 py-2.5 text-sm font-medium text-white transition hover:bg-sage-800 disabled:opacity-50 cursor-pointer",
         className
       )}
       {...props}
@@ -17,21 +17,23 @@ export function Btn({ className, ...props }: ButtonHTMLAttributes<HTMLButtonElem
   );
 }
 
-export function Input(props: React.InputHTMLAttributes<HTMLInputElement>) {
+export function Input({ className, ...props }: React.InputHTMLAttributes<HTMLInputElement>) {
   return (
     <input
       {...props}
-      className="w-full rounded-xl border border-stone-300 bg-white px-3 py-2 text-sm outline-none focus:border-sage-600 focus:ring-2 focus:ring-sage-100"
+      className={cn(
+        "w-full rounded-xl border border-stone-300 bg-white px-3 py-2.5 text-sm outline-none transition focus:border-sage-600 focus:ring-2 focus:ring-sage-100 placeholder:text-stone-400",
+        className
+      )}
     />
   );
 }
 
 export function Label({ children, className, ...props }: React.LabelHTMLAttributes<HTMLLabelElement>) {
-  return <label className={cn("mb-1 block text-xs font-semibold uppercase tracking-wide text-stone-500", className)} {...props}>{children}</label>;
+  return <label className={cn("mb-1.5 block text-xs font-semibold uppercase tracking-wide text-stone-500", className)} {...props}>{children}</label>;
 }
 
 export { Alert } from "./Alert";
 export type { AlertProps, AlertType } from "./Alert";
 export { AlertProvider, useAlert } from "./AlertProvider";
 export type { ModalAlertOptions, PromptAlertOptions } from "./AlertProvider";
-

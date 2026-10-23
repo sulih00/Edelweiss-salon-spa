@@ -6,6 +6,7 @@ import { redirect } from "next/navigation";
 import { PageHeader, Stat } from "@/components/admin";
 import PrintButton from "@/components/PrintButton";
 import LaporanExport, { type LaporanRow } from "./LaporanExport";
+import LaporanClient from "./LaporanClient";
 import { Wallet, TrendingDown, Scale, TicketPercent, CalendarCheck } from "lucide-react";
 
 function bulanIni() {
@@ -13,7 +14,6 @@ function bulanIni() {
   return `${n.getFullYear()}-${String(n.getMonth() + 1).padStart(2, "0")}`;
 }
 
-import LaporanClient from "./LaporanClient";
 
 export default async function LaporanPage({ searchParams }: { searchParams: Promise<{ bulan?: string }> }) {
   const s = await sessionRole();

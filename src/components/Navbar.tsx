@@ -28,6 +28,11 @@ export default function Navbar() {
     return () => window.removeEventListener("scroll", fn);
   }, []);
 
+  // Close mobile drawer on route change
+  useEffect(() => {
+    setOpen(false);
+  }, [path]);
+
   return (
     <header
       className={cn(
@@ -53,6 +58,8 @@ export default function Navbar() {
               <span className="block text-[10px] tracking-[0.3em] font-medium text-gold-600">SALON • MAKEUP ART</span>
             </span>
           </Link>
+
+          {/* Desktop Navigation */}
           <nav className="hidden items-center gap-6 text-sm md:flex">
             {links.map((l) => (
               <Link
@@ -71,18 +78,27 @@ export default function Navbar() {
               <span className="absolute inset-0 -translate-x-full bg-gradient-to-r from-transparent via-white/25 to-transparent transition-transform duration-700 group-hover:translate-x-full" />
             </Link>
           </nav>
+
+          {/* Mobile Actions */}
           <div className="flex items-center gap-2 md:hidden">
             <Link href="/booking" className="rounded-full bg-sage-700 px-4 py-2 text-sm font-medium text-white">
               Booking
             </Link>
-            <button onClick={() => setOpen(!open)} className="rounded-full border border-sage-200 p-2 text-sage-800" aria-label="menu">
+            <button onClick={() => setOpen(!open)} className="rounded-full border border-sage-200 p-2 text-sage-800 transition hover:bg-sage-50" aria-label="menu">
               {open ? <X size={18} /> : <Menu size={18} />}
             </button>
           </div>
         </div>
       </div>
-      {open && (
-        <nav className="animate-bloom border-b border-sage-100 bg-[#fdfbf7] px-4 py-3 md:hidden">
+
+      {/* Mobile Drawer */}
+      <div
+        className={cn(
+          "overflow-hidden border-b border-sage-100 bg-[#fdfbf7] transition-all duration-300 ease-in-out md:hidden",
+          open ? "max-h-[400px] opacity-100" : "max-h-0 border-b-0 opacity-0"
+        )}
+      >
+        <nav className="px-4 py-3">
           <div className="grid gap-1">
             {links.map((l) => (
               <Link
@@ -99,7 +115,7 @@ export default function Navbar() {
             ))}
           </div>
         </nav>
-      )}
+      </div>
     </header>
   );
 }

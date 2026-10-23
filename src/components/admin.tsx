@@ -104,8 +104,8 @@ export function PageHeader({
   breadcrumb?: { label: string; href?: string }[];
 }) {
   return (
-    <div className="mb-5 flex flex-wrap items-end justify-between gap-3">
-      <div>
+    <div className="mb-6 flex flex-wrap items-end justify-between gap-3">
+      <div className="min-w-0">
         {breadcrumb && breadcrumb.length > 0 && <Breadcrumb items={breadcrumb} />}
         <h1 className="text-2xl font-bold tracking-tight text-stone-900">{title}</h1>
         {desc && <p className="mt-1 text-sm text-stone-500">{desc}</p>}
@@ -254,8 +254,8 @@ export function RowBtn({
 
 export function Empty({ text = "Belum ada data." }: { text?: string }) {
   return (
-    <div className="flex flex-col items-center gap-2 rounded-2xl border border-dashed border-stone-300 bg-white px-4 py-10 text-center">
-      <Inbox size={28} className="text-stone-300" />
+    <div className="flex flex-col items-center gap-3 rounded-2xl border border-dashed border-stone-300 bg-white px-4 py-12 text-center">
+      <Inbox size={32} className="text-stone-300" />
       <p className="text-sm text-stone-400">{text}</p>
     </div>
   );

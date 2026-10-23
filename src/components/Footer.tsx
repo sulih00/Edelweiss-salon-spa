@@ -9,7 +9,9 @@ export default function Footer() {
     <footer className="relative overflow-hidden bg-sage-900 text-sage-100">
       <div className="pointer-events-none absolute -right-24 -top-24 h-72 w-72 rounded-full bg-gold-400/15 blur-3xl" />
       <div className="pointer-events-none absolute -bottom-24 -left-24 h-72 w-72 rounded-full bg-sage-600/30 blur-3xl" />
-      <div className="relative mx-auto grid max-w-6xl gap-10 px-4 py-14 md:grid-cols-[1.3fr_1fr_1fr]">
+
+      <div className="relative mx-auto grid max-w-6xl gap-12 px-4 py-14 sm:gap-10 md:grid-cols-[1.3fr_1fr_1fr]">
+        {/* Brand Column */}
         <div>
           <div className="flex items-center gap-3">
             <div className="relative h-11 w-11 shrink-0 overflow-hidden rounded-full border border-gold-300/40 bg-white shadow-md">
@@ -53,30 +55,37 @@ export default function Footer() {
             </a>
           </div>
         </div>
+
+        {/* Contact Column */}
         <div className="text-sm">
-          <p className="mb-3 text-xs font-bold uppercase tracking-[0.25em] text-gold-300">Kunjungi Kami</p>
-          <a href={`https://wa.me/${SOSMED.wa}`} target="_blank" rel="noreferrer" className="flex items-center gap-2 transition hover:text-green-400">
-            <IconWhatsApp className="h-4 w-4 text-green-400" /> {SOSMED.waFormatted} (WA)
-          </a>
-          <a href={SOSMED.instagram} target="_blank" rel="noreferrer" className="mt-2 flex items-center gap-2 transition hover:text-gold-300">
-            <IconInstagram className="h-4 w-4 text-gold-300" /> {SOSMED.instagramHandle}
-          </a>
-          <a href={SOSMED.tiktok} target="_blank" rel="noreferrer" className="mt-2 flex items-center gap-2 transition hover:text-gold-300">
-            <IconTikTok className="h-4 w-4 text-gold-300" /> {SOSMED.tiktokHandle}
-          </a>
-          <p className="mt-2.5 flex items-center gap-2 text-stone-300"><Clock size={14} className="text-gold-300" /> Setiap hari 09.00 – 20.00</p>
+          <p className="mb-4 text-xs font-bold uppercase tracking-[0.25em] text-gold-300">Kunjungi Kami</p>
+          <div className="space-y-3">
+            <a href={`https://wa.me/${SOSMED.wa}`} target="_blank" rel="noreferrer" className="flex items-center gap-2 transition hover:text-green-400">
+              <IconWhatsApp className="h-4 w-4 text-green-400" /> {SOSMED.waFormatted} (WA)
+            </a>
+            <a href={SOSMED.instagram} target="_blank" rel="noreferrer" className="flex items-center gap-2 transition hover:text-gold-300">
+              <IconInstagram className="h-4 w-4 text-gold-300" /> {SOSMED.instagramHandle}
+            </a>
+            <a href={SOSMED.tiktok} target="_blank" rel="noreferrer" className="flex items-center gap-2 transition hover:text-gold-300">
+              <IconTikTok className="h-4 w-4 text-gold-300" /> {SOSMED.tiktokHandle}
+            </a>
+            <p className="flex items-center gap-2 text-stone-300"><Clock size={14} className="text-gold-300" /> Setiap hari 09.00 – 20.00</p>
+          </div>
         </div>
+
+        {/* Navigation Column */}
         <div className="text-sm">
-          <p className="mb-3 text-xs font-bold uppercase tracking-[0.25em] text-gold-300">Jelajah</p>
-          <ul className="grid gap-2">
+          <p className="mb-4 text-xs font-bold uppercase tracking-[0.25em] text-gold-300">Jelajah</p>
+          <ul className="grid gap-2.5">
             {[["/layanan", "Layanan & Harga"], ["/promo", "Promo"], ["/galeri", "Galeri"], ["/testimoni", "Testimoni"], ["/booking", "Booking Online"], ["/kontak", "Kontak"]].map(([h, l]) => (
               <li key={h}><Link href={h} className="text-sage-100/75 transition hover:text-white">{l}</Link></li>
             ))}
           </ul>
         </div>
       </div>
+
       <div className="relative border-t border-white/10 py-4 text-center text-xs text-sage-100/50">
-        © {new Date().getFullYear()} Edelweiss Salon Makeup Art — crafted with calm 🌿
+        © {new Date().getFullYear()} Edelweiss Salon Makeup Art🌿
       </div>
     </footer>
   );

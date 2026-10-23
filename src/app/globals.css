@@ -5,17 +5,26 @@
   --color-sage-100: #e3eae1;
   --color-sage-200: #c7d5c3;
   --color-sage-300: #a9bfa5;
+  --color-sage-400: #8da98a;
+  --color-sage-500: #738e70;
   --color-sage-600: #5b7a5e;
   --color-sage-700: #466046;
   --color-sage-800: #35492f;
   --color-sage-900: #22301f;
+  --color-sage-950: #131d11;
   --color-cream-50: #fdfbf7;
   --color-cream-100: #faf5ec;
   --color-cream-200: #f3e8d3;
+  --color-gold-50: #fdf8ec;
+  --color-gold-100: #f9eed2;
+  --color-gold-200: #f0d99a;
   --color-gold-300: #ddc08a;
   --color-gold-400: #c9a96a;
   --color-gold-500: #b8924e;
   --color-gold-600: #96733a;
+  --color-gold-700: #7a5c2d;
+  --color-gold-800: #5e4520;
+  --color-gold-950: #2b1d08;
   --font-serif: "Playfair Display", Georgia, serif;
   --font-sans: "Inter", ui-sans-serif, system-ui, sans-serif;
 }
@@ -94,6 +103,16 @@ body {
 
 .no-scrollbar::-webkit-scrollbar { display: none; }
 .no-scrollbar { scrollbar-width: none; }
+
+/* Focus ring for accessible interactive elements */
+button:focus-visible, a:focus-visible, input:focus-visible, select:focus-visible, textarea:focus-visible {
+  outline: 2px solid var(--color-sage-600);
+  outline-offset: 2px;
+  border-radius: 8px;
+}
+
+/* Smooth image loading */
+img { transition: opacity 0.3s ease; }
 
 /* Thermal Receipt Printer CSS Styles */
 @media print {

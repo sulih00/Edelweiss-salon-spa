@@ -2,7 +2,7 @@ import Link from "next/link";
 import { prisma } from "@/lib/prisma";
 import { safeDb } from "@/lib/safe-db";
 import { rupiah } from "@/lib/utils";
-import { PageHeader, Stat, TableShell, Th, Td, Badge } from "@/components/admin";
+import { PageHeader, Stat, Th, Td, Badge } from "@/components/admin";
 import DashboardCharts, { type PaymentRow } from "./DashboardCharts";
 import { Wallet, TrendingDown, CalendarCheck, BellRing, Award, Receipt } from "lucide-react";
 
@@ -210,7 +210,7 @@ export default async function CmsDashboard() {
       />
 
       {/* Primary Metric Stat Cards (Today) */}
-      <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+      <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
         <Stat icon={<Wallet size={20} />} label="Omzet Hari Ini" value={rupiah(omzetHari)} tone="green" />
         <Stat icon={<TrendingDown size={20} />} label="Pengeluaran Hari Ini" value={rupiah(keluarHari)} tone="red" />
         <Stat
@@ -283,7 +283,7 @@ export default async function CmsDashboard() {
       <DashboardCharts daily={daily} byStatus={byStatus} top={top} paymentData={paymentData} />
 
       {/* Recent Bookings & POS Transactions */}
-      <div className="rounded-3xl border border-stone-200 bg-white shadow-sm overflow-hidden">
+      <div className="overflow-hidden rounded-3xl border border-stone-200 bg-white shadow-sm">
         <div className="flex items-center justify-between border-b border-stone-100 px-6 py-4">
           <div>
             <h2 className="font-serif-display text-lg font-bold text-stone-900">Transaksi &amp; Booking Terbaru</h2>
@@ -297,7 +297,8 @@ export default async function CmsDashboard() {
           </Link>
         </div>
 
-        <TableShell>
+        <div className="overflow-x-auto">
+          <table className="w-full min-w-[640px] text-left text-sm">
           <thead>
             <tr>
               <Th>Pelanggan</Th>
@@ -348,7 +349,8 @@ export default async function CmsDashboard() {
               </tr>
             ))}
           </tbody>
-        </TableShell>
+          </table>
+        </div>
         {recent.length === 0 && <p className="px-6 py-8 text-center text-xs text-stone-400">Belum ada aktivitas booking.</p>}
       </div>
     </div>
